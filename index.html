@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Pappe Mumi - Planner alimentare e lista della spesa">
     <title>Pappe Mumi</title>
     
     <!-- PWA Meta Tags -->
@@ -192,7 +193,7 @@
             const handleSave = () => { onSave(tempValue); setIsEditing(false); };
 
             const renderSmartContent = () => {
-                if (!value) return <span className="text-slate-300 italic text-sm">Nessuna indicazione.</span>;
+                if (!value) return <span className="text-slate-400 italic text-sm">Nessuna indicazione.</span>;
                 const groups = value.split(/\n\s*\n/);
                 return (
                     <div className="space-y-6 mt-2">
@@ -218,7 +219,11 @@
 
             return (
                 <div className="bg-white rounded-3xl shadow-soft overflow-hidden transition-all duration-300 border border-transparent hover:border-brand-100">
-                    <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-5 bg-white active:bg-slate-50 transition-colors">
+                    <button 
+                        onClick={() => setIsOpen(!isOpen)} 
+                        aria-label={isOpen ? `Chiudi ${label}` : `Apri ${label}`}
+                        className="w-full flex items-center justify-between p-5 bg-white active:bg-slate-50 transition-colors"
+                    >
                         <h3 className="text-sm font-display font-bold text-brand-700 uppercase tracking-wider flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${value ? 'bg-brand-500' : 'bg-slate-200'}`}></div>{label}</h3>
                         <i data-lucide="chevron-down" className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
                     </button>
@@ -226,14 +231,25 @@
                         <div className="px-5 pb-6 animate-fade-in border-t border-slate-50">
                             {isEditing ? (
                                 <div className="space-y-3 pt-4">
-                                    <textarea className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-500 min-h-[150px] text-slate-700 leading-relaxed text-sm resize-none" value={tempValue} onChange={(e) => setTempValue(e.target.value)} placeholder="Es:&#10;200ml latte&#10;60gr pane" autoFocus></textarea>
+                                    <label htmlFor={`edit-${label}`} className="sr-only">Modifica piano per {label}</label>
+                                    <textarea 
+                                        id={`edit-${label}`}
+                                        className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-500 min-h-[150px] text-slate-700 leading-relaxed text-sm resize-none" 
+                                        value={tempValue} 
+                                        onChange={(e) => setTempValue(e.target.value)} 
+                                        placeholder="Es:&#10;200ml latte&#10;60gr pane" 
+                                        autoFocus
+                                    ></textarea>
                                     <div className="flex justify-end gap-2">
-                                        <button onClick={() => { setIsEditing(false); setTempValue(value||''); }} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"><i data-lucide="x" className="w-5 h-5"></i></button>
-                                        <button onClick={handleSave} className="px-4 py-2 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 flex items-center gap-2 transition-colors active:scale-95"><i data-lucide="check" className="w-4 h-4"></i> Salva</button>
+                                        <button onClick={() => { setIsEditing(false); setTempValue(value||''); }} aria-label="Annulla" className="p-2 text-slate-500 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"><i data-lucide="x" className="w-5 h-5"></i></button>
+                                        <button onClick={handleSave} aria-label="Salva" className="px-4 py-2 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 flex items-center gap-2 transition-colors active:scale-95"><i data-lucide="check" className="w-4 h-4"></i> Salva</button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="relative group pt-2">{renderSmartContent()}<button onClick={() => { setIsEditing(true); setTempValue(value||''); }} className="absolute -top-2 -right-2 p-2 text-brand-400 hover:text-brand-600 hover:bg-brand-50 rounded-full transition-colors"><i data-lucide="pencil" className="w-4 h-4"></i></button></div>
+                                <div className="relative group pt-2">
+                                    {renderSmartContent()}
+                                    <button onClick={() => { setIsEditing(true); setTempValue(value||''); }} aria-label="Modifica questo pasto" className="absolute -top-2 -right-2 p-2 text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-full transition-colors"><i data-lucide="pencil" className="w-4 h-4"></i></button>
+                                </div>
                             )}
                         </div>
                     )}
@@ -277,15 +293,15 @@
             const displayEmoji = recipe.emoji || getCategoryEmoji(recipe.category);
 
             return (
-                <div className="fixed inset-0 z-[60] flex justify-center pointer-events-none">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} onTouchMove={(e) => e.preventDefault()}></div>
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} onTouchMove={(e) => e.preventDefault()} aria-label="Chiudi dettaglio"></div>
                     <div className="w-full max-w-md h-[100dvh] bg-white flex flex-col relative pointer-events-auto animate-fade-in overflow-hidden shadow-2xl">
                         <div ref={headerRef} className="absolute top-0 left-0 w-full bg-brand-50 flex items-center justify-center overflow-hidden z-20 origin-top shadow-sm transition-none" style={{ height: '256px' }}>
                             <div ref={emojiRef} className="transition-none leading-none origin-center" style={{ fontSize: '8rem', transform: 'scale(1)' }}>{displayEmoji}</div>
-                            <button onClick={onClose} className="absolute top-6 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
+                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-6 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
                             <div className="absolute top-6 right-6 flex gap-2 z-30">
-                                <button onClick={onEdit} className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white text-brand-700 transition-colors"><i data-lucide="pencil" className="w-6 h-6"></i></button>
-                                <button onClick={onDelete} className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-red-50 text-red-500 transition-colors"><i data-lucide="trash-2" className="w-6 h-6"></i></button>
+                                <button onClick={onEdit} aria-label="Modifica ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white text-brand-700 transition-colors"><i data-lucide="pencil" className="w-6 h-6"></i></button>
+                                <button onClick={onDelete} aria-label="Elimina ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-red-50 text-red-500 transition-colors"><i data-lucide="trash-2" className="w-6 h-6"></i></button>
                             </div>
                         </div>
                         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-white relative z-10 overscroll-none" onScroll={handleScroll}>
@@ -294,14 +310,14 @@
                                 <span className="inline-block mt-4 px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold uppercase tracking-wider rounded-full mb-3">{recipe.category}</span>
                                 <h1 className="font-display font-extrabold text-3xl text-slate-900 mb-6 leading-tight">{recipe.title}</h1>
                                 <div className="grid grid-cols-2 gap-4 mb-8">
-                                    <div className="bg-slate-50 p-4 rounded-2xl"><span className="block text-xs text-slate-400 font-bold uppercase mb-1">Tempo</span><span className="font-display font-bold text-slate-800 capitalize">{recipe.time}</span></div>
-                                    <div className="bg-slate-50 p-4 rounded-2xl"><span className="block text-xs text-slate-400 font-bold uppercase mb-1">Porzioni</span><span className="font-display font-bold text-slate-800">2 Persone</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl"><span className="block text-xs text-slate-500 font-bold uppercase mb-1">Tempo</span><span className="font-display font-bold text-slate-800 capitalize">{recipe.time}</span></div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl"><span className="block text-xs text-slate-500 font-bold uppercase mb-1">Porzioni</span><span className="font-display font-bold text-slate-800">2 Persone</span></div>
                                 </div>
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-display font-bold text-xl text-slate-800 flex items-center gap-2"><i data-lucide="shopping-cart" className="w-5 h-5 text-brand-500"></i> Ingredienti</h3>
                                     <div className="flex bg-slate-100 p-1 rounded-lg">
                                         {['both', 'Martina', 'Carmen'].map(mode => (
-                                            <button key={mode} onClick={() => setPortionMode(mode)} className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${portionMode === mode ? 'bg-white shadow text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}>{mode === 'both' ? 'Tutte' : mode}</button>
+                                            <button key={mode} onClick={() => setPortionMode(mode)} className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${portionMode === mode ? 'bg-white shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}>{mode === 'both' ? 'Tutte' : mode}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -494,33 +510,36 @@
                     <div 
                         className="bg-brand-50 border border-brand-100 rounded-2xl p-3 flex flex-col gap-2 relative shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
                         onClick={(e) => { e.stopPropagation(); setViewRecipe({ ...recipe, portions }); }}
+                        role="button"
+                        aria-label={`Dettagli ricetta: ${recipe.title}`}
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-display font-bold text-slate-800 text-sm truncate">{recipe.title}</h4>
-                                <div className="flex gap-2 text-[10px] text-slate-400 mt-0.5">
+                                <div className="flex gap-2 text-[10px] text-slate-500 mt-0.5">
                                     <span className="flex items-center gap-0.5"><i data-lucide="clock" className="w-3 h-3"></i> {recipe.time}</span>
                                 </div>
                             </div>
-                            <div className="text-2xl ml-2 shrink-0">{displayEmoji}</div>
+                            <div className="text-2xl ml-2 shrink-0" aria-hidden="true">{displayEmoji}</div>
                         </div>
 
                         <div className="flex justify-between items-center mt-1" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex bg-white rounded-lg p-0.5 gap-0.5">
+                            <div className="flex bg-white rounded-lg p-0.5 gap-0.5" role="group" aria-label="Seleziona porzioni">
                                 {['Martina', 'Carmen', 'both'].map(m => (
                                     <button 
                                         key={m}
                                         onClick={() => updateRecipePortion(slot, index, type, m)}
-                                        className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                        aria-label={`Porzione per ${m}`}
+                                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
                                         {m === 'both' ? 'T' : m.charAt(0)}
                                     </button>
                                 ))}
                             </div>
                             <div className="flex gap-1">
-                                <button onClick={() => setModalConfig({ slot, type, index, action: 'replace' })} className="text-brand-400 hover:text-brand-600 p-1.5 bg-white rounded-lg shadow-sm"><i data-lucide="search" className="w-3.5 h-3.5"></i></button>
-                                <button onClick={() => randomizeSpecificItem(slot, index, type)} className="text-brand-400 hover:text-brand-600 p-1.5 bg-white rounded-lg shadow-sm"><i data-lucide="rotate-cw" className="w-3.5 h-3.5"></i></button>
-                                <button onClick={() => removeRecipeFromSlot(slot, index, type)} className="text-red-300 hover:text-red-500 p-1.5 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-3.5 h-3.5"></i></button>
+                                <button onClick={() => setModalConfig({ slot, type, index, action: 'replace' })} aria-label="Sostituisci ricetta" className="text-brand-600 hover:text-brand-800 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="search" className="w-3.5 h-3.5"></i></button>
+                                <button onClick={() => randomizeSpecificItem(slot, index, type)} aria-label="Cambia casualmente questa ricetta" className="text-brand-600 hover:text-brand-800 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="rotate-cw" className="w-3.5 h-3.5"></i></button>
+                                <button onClick={() => removeRecipeFromSlot(slot, index, type)} aria-label="Rimuovi ricetta" className="text-red-400 hover:text-red-600 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-3.5 h-3.5"></i></button>
                             </div>
                         </div>
                     </div>
@@ -531,18 +550,19 @@
                 <div className="space-y-6 animate-fade-in">
                     {/* Header Planner */}
                     <div className="bg-surface-card p-4 rounded-3xl shadow-soft flex items-center justify-between">
-                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d); }} className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left" className="text-slate-400"></i></button>
+                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d); }} aria-label="Settimana precedente" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left" className="text-slate-400"></i></button>
                         <div className="text-center">
                             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Settimana corrente</p>
                             <h2 className="text-lg font-display font-bold text-slate-800">{getWeekRangeString(currentDate)}</h2>
                         </div>
-                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d); }} className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right" className="text-slate-400"></i></button>
+                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d); }} aria-label="Settimana successiva" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right" className="text-slate-400"></i></button>
                     </div>
 
                     {/* Days Row */}
-                    <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar px-1">
+                    <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar px-1" role="tablist">
                         {days.map((day, idx) => (
                             <button key={day} onClick={() => setSelectedDayIndex(idx)}
+                                role="tab" aria-selected={selectedDayIndex === idx}
                                 className={`flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 ${selectedDayIndex === idx ? 'bg-brand-500 text-white shadow-glow translate-y-[-2px]' : 'bg-white text-slate-400 shadow-sm'}`}>
                                 <span className="text-xs font-medium opacity-80">{day}</span>
                                 <div className={`w-1.5 h-1.5 rounded-full ${selectedDayIndex === idx ? 'bg-white' : 'bg-transparent'}`}></div>
@@ -566,18 +586,18 @@
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">{slot}</span>
-                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="w-6 h-6 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center hover:bg-brand-100 transition-colors"><i data-lucide="plus" className="w-4 h-4"></i></button>
+                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} aria-label={`Aggiungi ricetta a ${slot}`} className="w-9 h-9 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center hover:bg-brand-100 transition-colors"><i data-lucide="plus" className="w-5 h-5"></i></button>
                                         </div>
                                         <div className="flex gap-1">
-                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="p-1.5 bg-slate-50 rounded-full text-slate-400 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-3.5 h-3.5"></i></button>
-                                            <button onClick={() => randomizeSlot(slot)} className="p-1.5 bg-slate-50 rounded-full text-slate-400 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-3.5 h-3.5"></i></button>
+                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} aria-label={`Cerca ricetta per ${slot}`} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-4 h-4"></i></button>
+                                            <button onClick={() => randomizeSlot(slot)} aria-label={`Rigenera tutto il ${slot}`} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button>
                                         </div>
                                     </div>
 
                                     {/* Main Dishes List */}
                                     <div className="space-y-2">
                                         {items.length === 0 ? (
-                                            <div onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="border-2 border-dashed border-slate-100 rounded-2xl p-4 text-center text-slate-300 text-xs font-medium cursor-pointer hover:border-brand-200 hover:text-brand-400 transition-colors">Aggiungi piatto principale</div>
+                                            <div onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="border-2 border-dashed border-slate-100 rounded-2xl p-4 text-center text-slate-400 text-xs font-medium cursor-pointer hover:border-brand-200 hover:text-brand-600 transition-colors">Aggiungi piatto principale</div>
                                         ) : (
                                             items.map((recipe, idx) => (
                                                 <SlotItem key={recipe.instanceId || idx} recipe={recipe} index={idx} type="main" slot={slot} />
@@ -591,8 +611,8 @@
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="carrot" className="w-3 h-3"></i> Contorno</span>
                                                 <div className="flex gap-1">
-                                                    <button onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} className="p-1.5 bg-slate-50 rounded-full text-slate-400 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-3.5 h-3.5"></i></button>
-                                                    <button onClick={() => randomizeSlot(slot)} className="p-1.5 bg-slate-50 rounded-full text-slate-400 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-3.5 h-3.5"></i></button>
+                                                    <button onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} aria-label="Cerca contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-4 h-4"></i></button>
+                                                    <button onClick={() => randomizeSlot(slot)} aria-label="Rigenera contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button>
                                                 </div>
                                             </div>
                                             {side ? (
@@ -681,20 +701,26 @@
             if (category === 'Contorno') titleText = "Scegli Contorno";
 
             return (
-                <div className="fixed inset-0 z-[60] flex justify-center items-end sm:items-center pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} onTouchMove={(e) => e.preventDefault()}></div>
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex justify-center items-end sm:items-center pointer-events-none">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} onTouchMove={(e) => e.preventDefault()} aria-label="Chiudi selezione"></div>
                     <div className="w-full max-w-md bg-white h-[85vh] rounded-t-[32px] sm:rounded-3xl shadow-2xl z-50 pointer-events-auto flex flex-col animate-fadeIn overflow-hidden">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="font-display font-bold text-xl text-slate-800">{titleText}</h3>
-                            <button onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
+                            <button onClick={onClose} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
                         </div>
                         <div className="px-6 py-4 bg-slate-50 space-y-3">
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
                                     <i data-lucide="search" className="absolute left-3 top-3.5 w-5 h-5 text-slate-400"></i>
-                                    <input className="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-brand-500" placeholder="Cerca..." value={q} onChange={e=>setQ(e.target.value)} />
+                                    <input 
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-brand-500" 
+                                        placeholder="Cerca..." 
+                                        value={q} 
+                                        onChange={e=>setQ(e.target.value)} 
+                                        aria-label="Cerca ricetta"
+                                    />
                                 </div>
-                                <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-sm'}`}><i data-lucide="sliders-horizontal" className="w-5 h-5"></i></button>
+                                <button onClick={() => setShowFilters(!showFilters)} aria-label="Mostra filtri" className={`p-3 rounded-xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-sm'}`}><i data-lucide="sliders-horizontal" className="w-5 h-5"></i></button>
                             </div>
                             {showFilters && (
                                 <div className="flex gap-2 animate-fade-in">
@@ -752,9 +778,15 @@
                         <div className="flex gap-2 px-1">
                             <div className="relative flex-1">
                                 <i data-lucide="search" className="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
-                                <input className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl shadow-soft border-none focus:ring-2 focus:ring-brand-500" placeholder="Cerca..." value={q} onChange={e=>setQ(e.target.value)} />
+                                <input 
+                                    className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl shadow-soft border-none focus:ring-2 focus:ring-brand-500" 
+                                    placeholder="Cerca..." 
+                                    value={q} 
+                                    onChange={e=>setQ(e.target.value)} 
+                                    aria-label="Cerca ricetta nel ricettario"
+                                />
                             </div>
-                            <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-2xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-soft'}`}><i data-lucide="sliders-horizontal" className="w-6 h-6"></i></button>
+                            <button onClick={() => setShowFilters(!showFilters)} aria-label="Filtri" className={`p-3 rounded-2xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-soft'}`}><i data-lucide="sliders-horizontal" className="w-6 h-6"></i></button>
                         </div>
                         {showFilters && (
                             <div className="space-y-3 animate-fade-in px-1">
@@ -782,8 +814,8 @@
                                     <h3 className="font-display font-bold text-lg text-slate-800 leading-tight mb-1">{r.title}</h3>
                                     <div className="flex gap-3 text-xs font-medium text-slate-400"><span className="uppercase">{r.category}</span><span>•</span><span>{r.time}</span></div>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); onEditRequest(r); }} className="p-3 text-brand-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors"><i data-lucide="pencil" className="w-5 h-5"></i></button>
-                                <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db,'recipes',r.id));}} className="p-3 mr-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                <button onClick={(e) => { e.stopPropagation(); onEditRequest(r); }} aria-label="Modifica" className="p-3 text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-xl transition-colors"><i data-lucide="pencil" className="w-5 h-5"></i></button>
+                                <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db,'recipes',r.id));}} aria-label="Elimina" className="p-3 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                             </div>
                         ))}
                     </div>
@@ -933,15 +965,15 @@
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="font-display font-extrabold text-2xl text-slate-900">Lista Spesa</h2>
                          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm">
-                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()-7);setCurr(d)}}><i data-lucide="chevron-left" className="w-4 h-4 text-slate-400"></i></button>
+                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()-7);setCurr(d)}} aria-label="Settimana precedente"><i data-lucide="chevron-left" className="w-4 h-4 text-slate-400"></i></button>
                             <span className="text-xs font-bold text-slate-600">{getWeekRangeString(curr)}</span>
-                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()+7);setCurr(d)}}><i data-lucide="chevron-right" className="w-4 h-4 text-slate-400"></i></button>
+                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()+7);setCurr(d)}} aria-label="Settimana successiva"><i data-lucide="chevron-right" className="w-4 h-4 text-slate-400"></i></button>
                         </div>
                     </div>
 
-                    <div className="flex justify-between mb-4 px-1">
+                    <div className="flex justify-between mb-4 px-1" role="group" aria-label="Filtro giorni">
                         {days.map((d, idx) => (
-                            <button key={idx} onClick={() => toggleDay(idx)} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-sm ${selectedDays.includes(idx) ? 'bg-brand-500 text-white scale-110 shadow-md' : 'bg-white text-slate-400'}`}>{d}</button>
+                            <button key={idx} onClick={() => toggleDay(idx)} aria-pressed={selectedDays.includes(idx)} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-sm ${selectedDays.includes(idx) ? 'bg-brand-500 text-white scale-110 shadow-md' : 'bg-white text-slate-400'}`}>{d}</button>
                         ))}
                     </div>
                     
@@ -958,24 +990,24 @@
                                 </label>
                             ))}
                         </div>
-                        <button onClick={() => setIsAddModalOpen(true)} className="absolute bottom-6 right-6 bg-brand-500 hover:bg-brand-600 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90 z-10"><i data-lucide="plus" className="w-6 h-6"></i></button>
+                        <button onClick={() => setIsAddModalOpen(true)} aria-label="Aggiungi prodotto extra" className="absolute bottom-6 right-6 bg-brand-500 hover:bg-brand-600 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90 z-10"><i data-lucide="plus" className="w-6 h-6"></i></button>
                     </div>
 
                     {isAddModalOpen && (
-                        <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
-                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-                             <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe">
+                        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
+                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} aria-label="Chiudi"></div>
+                             <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-24">
                                  <div className="flex justify-between items-center mb-6">
                                      <h3 className="font-display font-bold text-xl text-slate-800">Aggiungi Prodotto</h3>
-                                     <button onClick={() => setIsAddModalOpen(false)} className="p-2 bg-slate-100 rounded-full"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
+                                     <button onClick={() => setIsAddModalOpen(false)} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
                                  </div>
                                  <div className="space-y-4 mb-6">
-                                     <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nome Prodotto</label><input className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="Es. Latte, Mele..." value={newExtName} onChange={e => setNewExtName(e.target.value)} /></div>
+                                     <div><label htmlFor="new-product-name" className="block text-xs font-bold text-slate-400 uppercase mb-1">Nome Prodotto</label><input id="new-product-name" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="Es. Latte, Mele..." value={newExtName} onChange={e => setNewExtName(e.target.value)} /></div>
                                      <div className="flex gap-3">
-                                         <div className="flex-1"><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Quantità</label><input type="number" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="0" value={newExtQty} onChange={e => setNewExtQty(e.target.value)} /></div>
+                                         <div className="flex-1"><label htmlFor="new-product-qty" className="block text-xs font-bold text-slate-400 uppercase mb-1">Quantità</label><input id="new-product-qty" type="number" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="0" value={newExtQty} onChange={e => setNewExtQty(e.target.value)} /></div>
                                          <div className="w-1/3">
-                                             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Unità</label>
-                                             <select className="w-full p-3 bg-slate-50 rounded-xl border-none" value={newExtUnit} onChange={e => setNewExtUnit(e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select>
+                                             <label htmlFor="new-product-unit" className="block text-xs font-bold text-slate-400 uppercase mb-1">Unità</label>
+                                             <select id="new-product-unit" className="w-full p-3 bg-slate-50 rounded-xl border-none" value={newExtUnit} onChange={e => setNewExtUnit(e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select>
                                          </div>
                                      </div>
                                      <button onClick={handleAddExtra} className="w-full py-3 bg-brand-600 text-white font-bold rounded-xl shadow-md active:scale-95 transition-transform">Aggiungi alla Lista</button>
@@ -987,7 +1019,7 @@
                                              {extras.map(e => (
                                                  <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-sm">
                                                      <span className="font-medium text-slate-700">{e.name}</span>
-                                                     <div className="flex items-center gap-3"><span className="text-slate-500">{e.qty} {e.unit}</span><button onClick={() => handleDeleteExtra(e.id)} className="text-red-400 hover:text-red-600"><i data-lucide="trash-2" className="w-4 h-4"></i></button></div>
+                                                     <div className="flex items-center gap-3"><span className="text-slate-500">{e.qty} {e.unit}</span><button onClick={() => handleDeleteExtra(e.id)} aria-label={`Rimuovi ${e.name}`} className="text-red-400 hover:text-red-600"><i data-lucide="trash-2" className="w-4 h-4"></i></button></div>
                                                  </div>
                                              ))}
                                          </div>
@@ -1042,7 +1074,7 @@
                     <h2 className="font-display font-extrabold text-2xl text-slate-900">{editData ? 'Modifica Ricetta' : 'Nuova Ricetta'}</h2>
                     <div className="bg-white p-6 rounded-3xl shadow-soft space-y-4">
                          <div className="flex justify-center mb-4">
-                            <button onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)} className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center text-6xl shadow-inner hover:bg-brand-100 transition-colors relative">
+                            <button onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)} aria-label="Scegli emoji" className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center text-6xl shadow-inner hover:bg-brand-100 transition-colors relative">
                                 {displayEmoji}
                                 <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md"><i data-lucide="pencil" className="w-4 h-4 text-slate-500"></i></div>
                             </button>
@@ -1054,28 +1086,28 @@
                                 ))}
                             </div>
                         )}
-                        <div><label className="block text-xs font-bold text-slate-400 uppercase mb-2">Titolo</label><input className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-500 font-display font-bold text-lg" placeholder="Es. Pasta al Pesto" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} /></div>
+                        <div><label htmlFor="recipe-title" className="block text-xs font-bold text-slate-400 uppercase mb-2">Titolo</label><input id="recipe-title" className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-500 font-display font-bold text-lg" placeholder="Es. Pasta al Pesto" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} /></div>
                         <div className="grid grid-cols-2 gap-4">
-                             <div><label className="block text-xs font-bold text-slate-400 uppercase mb-2">Categoria</label><select className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.category} onChange={e=>setForm({...form, category:e.target.value})}><option>Colazione</option><option>Pranzo</option><option>Cena</option><option>Spuntino</option><option>Contorno</option></select></div>
-                             <div><label className="block text-xs font-bold text-slate-400 uppercase mb-2">Tempo</label><select className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.time} onChange={e=>setForm({...form, time:e.target.value})}><option value="breve">Breve</option><option value="media">Media</option><option value="lunga">Lunga</option></select></div>
+                             <div><label htmlFor="recipe-category" className="block text-xs font-bold text-slate-400 uppercase mb-2">Categoria</label><select id="recipe-category" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.category} onChange={e=>setForm({...form, category:e.target.value})}><option>Colazione</option><option>Pranzo</option><option>Cena</option><option>Spuntino</option><option>Contorno</option></select></div>
+                             <div><label htmlFor="recipe-time" className="block text-xs font-bold text-slate-400 uppercase mb-2">Tempo</label><select id="recipe-time" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.time} onChange={e=>setForm({...form, time:e.target.value})}><option value="breve">Breve</option><option value="media">Media</option><option value="lunga">Lunga</option></select></div>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl shadow-soft">
-                        <div className="flex justify-between items-center mb-4"><h3 className="font-display font-bold text-lg">Ingredienti</h3><button onClick={()=>setIngs([...ings,{name:'',qtyM:'',qtyC:'',unit:'gr'}])} className="text-brand-600 bg-brand-50 p-2 rounded-full"><i data-lucide="plus" className="w-5 h-5"></i></button></div>
+                        <div className="flex justify-between items-center mb-4"><h3 className="font-display font-bold text-lg">Ingredienti</h3><button onClick={()=>setIngs([...ings,{name:'',qtyM:'',qtyC:'',unit:'gr'}])} aria-label="Aggiungi ingrediente" className="text-brand-600 bg-brand-50 p-2 rounded-full"><i data-lucide="plus" className="w-5 h-5"></i></button></div>
                         <div className="space-y-4">
                             {ings.map((ing, i) => (
                                 <div key={i} className="p-3 border border-slate-100 rounded-2xl">
-                                    <input className="w-full mb-2 p-2 font-medium bg-transparent border-b border-slate-200 focus:border-brand-500 outline-none" placeholder="Nome ingrediente" value={ing.name} onChange={e=>updateIng(i,'name',e.target.value)} />
+                                    <input className="w-full mb-2 p-2 font-medium bg-transparent border-b border-slate-200 focus:border-brand-500 outline-none" placeholder="Nome ingrediente" aria-label={`Nome ingrediente ${i+1}`} value={ing.name} onChange={e=>updateIng(i,'name',e.target.value)} />
                                     <div className="flex gap-2 items-center text-sm">
-                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">M</span><input type="number" className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyM} onChange={e=>updateIng(i,'qtyM',e.target.value)} /></div>
-                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">C</span><input type="number" className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyC} onChange={e=>updateIng(i,'qtyC',e.target.value)} /></div>
-                                        <div className="flex-1 bg-slate-50 rounded-lg px-1 py-1"><select className="w-full bg-transparent text-xs font-bold text-slate-600 border-none outline-none py-1" value={ing.unit} onChange={e=>updateIng(i,'unit',e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select></div>
+                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">M</span><input type="number" aria-label={`Quantità Martina per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyM} onChange={e=>updateIng(i,'qtyM',e.target.value)} /></div>
+                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">C</span><input type="number" aria-label={`Quantità Carmen per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyC} onChange={e=>updateIng(i,'qtyC',e.target.value)} /></div>
+                                        <div className="flex-1 bg-slate-50 rounded-lg px-1 py-1"><select aria-label={`Unità per ${ing.name}`} className="w-full bg-transparent text-xs font-bold text-slate-600 border-none outline-none py-1" value={ing.unit} onChange={e=>updateIng(i,'unit',e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-3xl shadow-soft"><h3 className="font-display font-bold text-lg mb-4">Procedimento</h3><textarea className="w-full p-4 bg-slate-50 rounded-2xl border-none min-h-[120px]" placeholder="Descrivi i passaggi..." value={form.procedure} onChange={e=>setForm({...form, procedure:e.target.value})}></textarea></div>
+                    <div className="bg-white p-6 rounded-3xl shadow-soft"><h3 className="font-display font-bold text-lg mb-4">Procedimento</h3><textarea className="w-full p-4 bg-slate-50 rounded-2xl border-none min-h-[120px]" placeholder="Descrivi i passaggi..." value={form.procedure} onChange={e=>setForm({...form, procedure:e.target.value})} aria-label="Procedimento ricetta"></textarea></div>
                     <button onClick={handleSave} className="w-full py-4 bg-brand-600 text-white font-display font-bold text-lg rounded-2xl shadow-glow active:scale-95 transition-transform">{editData ? 'Salva Modifiche' : 'Aggiungi Ricetta'}</button>
                 </div>
             );
@@ -1154,32 +1186,32 @@
             return (
                 <div className="animate-fade-in space-y-4 pb-20">
                     <div className="flex items-center gap-2 mb-6">
-                        <div className="flex-1 flex bg-white p-1.5 rounded-2xl shadow-soft">
+                        <div className="flex-1 flex bg-white p-1.5 rounded-2xl shadow-soft" role="group" aria-label="Seleziona persona">
                             {['Martina','Carmen'].map(n => (
-                                <button key={n} onClick={()=>setP(n)} className={`flex-1 py-3 rounded-xl font-bold font-display transition-all ${p===n ? 'bg-brand-500 text-white shadow-md' : 'text-slate-400'}`}>{n}</button>
+                                <button key={n} onClick={()=>setP(n)} aria-pressed={p===n} className={`flex-1 py-3 rounded-xl font-bold font-display transition-all ${p===n ? 'bg-brand-500 text-white shadow-md' : 'text-slate-400'}`}>{n}</button>
                             ))}
                         </div>
-                        <button onClick={() => setIsEditing(!isEditing)} className={`p-4 rounded-2xl shadow-soft transition-colors ${isEditing ? 'bg-slate-800 text-white' : 'bg-white text-slate-400'}`}><i data-lucide={isEditing ? "check" : "settings-2"} className="w-5 h-5"></i></button>
+                        <button onClick={() => setIsEditing(!isEditing)} aria-label={isEditing ? "Chiudi gestione" : "Gestisci pasti"} className={`p-4 rounded-2xl shadow-soft transition-colors ${isEditing ? 'bg-slate-800 text-white' : 'bg-white text-slate-400'}`}><i data-lucide={isEditing ? "check" : "settings-2"} className="w-5 h-5"></i></button>
                     </div>
 
                     {isEditing ? (
                         <div className="bg-white p-6 rounded-3xl shadow-soft animate-fade-in">
                             <h3 className="font-display font-bold text-lg mb-4 text-slate-800">Gestisci Pasti per {p}</h3>
                             <div className="flex gap-2 mb-6">
-                                <input className="flex-1 p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-sm font-bold" placeholder="Nuovo pasto (es. Spuntino 3)" value={newSlotName} onChange={(e) => setNewSlotName(e.target.value)} />
-                                <button onClick={addSlot} className="bg-brand-500 text-white p-3 rounded-xl shadow-md active:scale-95"><i data-lucide="plus" className="w-5 h-5"></i></button>
+                                <input className="flex-1 p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-sm font-bold" placeholder="Nuovo pasto (es. Spuntino 3)" value={newSlotName} onChange={(e) => setNewSlotName(e.target.value)} aria-label="Nome nuovo pasto" />
+                                <button onClick={addSlot} aria-label="Aggiungi pasto" className="bg-brand-500 text-white p-3 rounded-xl shadow-md active:scale-95"><i data-lucide="plus" className="w-5 h-5"></i></button>
                             </div>
                             <div className="space-y-2">
                                 {currentSlots.map((s, idx) => (
                                     <div key={s} className="flex justify-between items-center p-3 border border-slate-100 rounded-xl bg-slate-50">
                                         <div className="flex items-center gap-2">
                                             <div className="flex flex-col gap-1 mr-2">
-                                                <button onClick={() => moveSlot(idx, -1)} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30"><i data-lucide="chevron-up" className="w-4 h-4"></i></button>
-                                                <button onClick={() => moveSlot(idx, 1)} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30"><i data-lucide="chevron-down" className="w-4 h-4"></i></button>
+                                                <button onClick={() => moveSlot(idx, -1)} aria-label={`Sposta su ${s}`} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-2"><i data-lucide="chevron-up" className="w-4 h-4"></i></button>
+                                                <button onClick={() => moveSlot(idx, 1)} aria-label={`Sposta giù ${s}`} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-2"><i data-lucide="chevron-down" className="w-4 h-4"></i></button>
                                             </div>
                                             <span className="font-bold text-slate-700">{s}</span>
                                         </div>
-                                        <button onClick={() => removeSlot(s)} className="text-red-400 hover:text-red-600 p-2 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                        <button onClick={() => removeSlot(s)} aria-label={`Rimuovi ${s}`} className="text-red-400 hover:text-red-600 p-3 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
                                     </div>
                                 ))}
                             </div>
@@ -1261,7 +1293,7 @@
                         <div className="flex justify-around items-center px-2 pt-3 pb-6 max-w-md mx-auto">
                             <NavBtn icon="calendar" label="Planner" active={activeTab === 'planner'} onClick={() => setActiveTab('planner')} />
                             <NavBtn icon="book-open" label="Ricette" active={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
-                            <button onClick={() => { setRecipeToEdit(null); setActiveTab('add'); }} className="relative -top-6 bg-brand-500 text-white rounded-2xl p-4 shadow-glow transform transition-transform active:scale-95"><i data-lucide="plus" className="w-7 h-7"></i></button>
+                            <button onClick={() => { setRecipeToEdit(null); setActiveTab('add'); }} aria-label="Aggiungi nuova ricetta" className="relative -top-6 bg-brand-500 text-white rounded-2xl p-4 shadow-glow transform transition-transform active:scale-95"><i data-lucide="plus" className="w-7 h-7"></i></button>
                             <NavBtn icon="user" label="Piano" active={activeTab === 'nutrition'} onClick={() => setActiveTab('nutrition')} />
                             <NavBtn icon="shopping-cart" label="Spesa" active={activeTab === 'shopping'} onClick={() => setActiveTab('shopping')} />
                         </div>
@@ -1272,7 +1304,7 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err)); }
     </script>
 </body>
 </html>
