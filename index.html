@@ -338,7 +338,7 @@
             );
         };
 
-        // --- PLANNER ---
+        // --- PLANNER (UPDATED: MULTI-RECIPE + SIDE DISH + INDIVIDUAL CONTROLS) ---
         const Planner = ({ onEditRequest, currentDate, setCurrentDate, selectedDayIndex, setSelectedDayIndex }) => {
             const [plan, setPlan] = React.useState({});
             const [recipes, setRecipes] = React.useState([]);
@@ -353,6 +353,7 @@
                 return () => { u1(); u2(); };
             }, [currentDate]);
 
+            // FIX: Added isGen to dependency array to force icon reload after generation
             React.useEffect(() => { loadIcons(); }, [plan, modalConfig, selectedDayIndex, viewRecipe, isGen]);
 
             const days = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -499,6 +500,7 @@
                 setModalConfig(null);
             };
 
+            // FIX: Added useEffect to load icons on mount for every slot item
             const SlotItem = ({ recipe, index, type, slot }) => {
                 React.useEffect(() => { loadIcons(); }, []);
                 const displayEmoji = recipe.emoji || getCategoryEmoji(recipe.category);
@@ -528,16 +530,16 @@
                                         key={m}
                                         onClick={() => updateRecipePortion(slot, index, type, m)}
                                         aria-label={`Porzione per ${m}`}
-                                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
                                         {m === 'both' ? 'T' : m.charAt(0)}
                                     </button>
                                 ))}
                             </div>
                             <div className="flex gap-1">
-                                <button onClick={() => setModalConfig({ slot, type, index, action: 'replace' })} aria-label="Sostituisci ricetta" className="text-brand-600 hover:text-brand-800 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="search" className="w-3.5 h-3.5"></i></button>
-                                <button onClick={() => randomizeSpecificItem(slot, index, type)} aria-label="Cambia casualmente questa ricetta" className="text-brand-600 hover:text-brand-800 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="rotate-cw" className="w-3.5 h-3.5"></i></button>
-                                <button onClick={() => removeRecipeFromSlot(slot, index, type)} aria-label="Rimuovi ricetta" className="text-red-400 hover:text-red-600 p-2.5 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-3.5 h-3.5"></i></button>
+                                <button onClick={() => setModalConfig({ slot, type, index, action: 'replace' })} aria-label="Sostituisci ricetta" className="text-brand-600 hover:text-brand-800 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="search" className="w-5 h-5"></i></button>
+                                <button onClick={() => randomizeSpecificItem(slot, index, type)} aria-label="Cambia casualmente questa ricetta" className="text-brand-600 hover:text-brand-800 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="rotate-cw" className="w-5 h-5"></i></button>
+                                <button onClick={() => removeRecipeFromSlot(slot, index, type)} aria-label="Rimuovi ricetta" className="text-red-400 hover:text-red-600 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                             </div>
                         </div>
                     </div>
@@ -881,14 +883,14 @@
                                                 else if (portions === 'Carmen') qty = parseFloat(i.qtyC || 0);
                                                 else qty = (parseFloat(i.qtyM || 0) + parseFloat(i.qtyC || 0));
 
-                                                // --- LOGICA RICETTE ---
-                                                // Se "q.b." o "qb", set unit to empty, qty 0.
-                                                // Se qty <= 0 da ricetta (strano ma possibile), trattato come 0.
+                                                // --- LOGICA "SENZA QUANTITÀ" ---
+                                                // Se l'unità è q.b. OPPURE la quantità è zero/null
                                                 let finalUnit = rawUnit;
                                                 if (rawUnit === 'q.b.' || rawUnit === 'qb' || qty <= 0 || isNaN(qty)) {
-                                                    finalUnit = '';
+                                                    finalUnit = ''; // Rimuovi unità per visualizzazione pulita
                                                     qty = 0;
                                                 } else {
+                                                    // Normalizzazioni standard solo se c'è quantità
                                                     if (!finalUnit) finalUnit = 'pz';
                                                     if (name.toLowerCase().includes('pane') && ['fetta', 'fette', 'pz', 'pezzi'].includes(finalUnit)) { finalUnit = 'gr'; if(qty < 10) qty = qty * 30; }
                                                     if (finalUnit === 'fetta' || finalUnit === 'fette') finalUnit = 'pz';
@@ -1032,7 +1034,10 @@
                                              {extras.map(e => (
                                                  <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-sm">
                                                      <span className="font-medium text-slate-700">{e.name}</span>
-                                                     <div className="flex items-center gap-3"><span className="text-slate-500">{e.qty} {e.unit}</span><button onClick={() => handleDeleteExtra(e.id)} aria-label={`Rimuovi ${e.name}`} className="text-red-400 hover:text-red-600"><i data-lucide="trash-2" className="w-4 h-4"></i></button></div>
+                                                     <div className="flex items-center gap-1">
+                                                         <span className="text-slate-500 text-xs">{e.qty} {e.unit}</span>
+                                                         <button onClick={() => handleDeleteExtra(e.id)} aria-label={`Rimuovi ${e.name}`} className="text-red-400 hover:text-red-600 p-3 rounded-full hover:bg-red-50 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                                     </div>
                                                  </div>
                                              ))}
                                          </div>
@@ -1219,12 +1224,12 @@
                                     <div key={s} className="flex justify-between items-center p-3 border border-slate-100 rounded-xl bg-slate-50">
                                         <div className="flex items-center gap-2">
                                             <div className="flex flex-col gap-1 mr-2">
-                                                <button onClick={() => moveSlot(idx, -1)} aria-label={`Sposta su ${s}`} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-2"><i data-lucide="chevron-up" className="w-4 h-4"></i></button>
-                                                <button onClick={() => moveSlot(idx, 1)} aria-label={`Sposta giù ${s}`} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-2"><i data-lucide="chevron-down" className="w-4 h-4"></i></button>
+                                                <button onClick={() => moveSlot(idx, -1)} aria-label={`Sposta su ${s}`} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-up" className="w-5 h-5"></i></button>
+                                                <button onClick={() => moveSlot(idx, 1)} aria-label={`Sposta giù ${s}`} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-down" className="w-5 h-5"></i></button>
                                             </div>
                                             <span className="font-bold text-slate-700">{s}</span>
                                         </div>
-                                        <button onClick={() => removeSlot(s)} aria-label={`Rimuovi ${s}`} className="text-red-400 hover:text-red-600 p-3 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                        <button onClick={() => removeSlot(s)} aria-label={`Rimuovi ${s}`} className="text-red-400 hover:text-red-600 p-3 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                                     </div>
                                 ))}
                             </div>
