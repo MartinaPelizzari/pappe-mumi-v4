@@ -338,7 +338,7 @@
             );
         };
 
-        // --- PLANNER (UPDATED: MULTI-RECIPE + SIDE DISH + INDIVIDUAL CONTROLS) ---
+        // --- PLANNER ---
         const Planner = ({ onEditRequest, currentDate, setCurrentDate, selectedDayIndex, setSelectedDayIndex }) => {
             const [plan, setPlan] = React.useState({});
             const [recipes, setRecipes] = React.useState([]);
@@ -353,7 +353,6 @@
                 return () => { u1(); u2(); };
             }, [currentDate]);
 
-            // FIX: Added isGen to dependency array to force icon reload after generation
             React.useEffect(() => { loadIcons(); }, [plan, modalConfig, selectedDayIndex, viewRecipe, isGen]);
 
             const days = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -500,7 +499,6 @@
                 setModalConfig(null);
             };
 
-            // FIX: Added useEffect to load icons on mount for every slot item
             const SlotItem = ({ recipe, index, type, slot }) => {
                 React.useEffect(() => { loadIcons(); }, []);
                 const displayEmoji = recipe.emoji || getCategoryEmoji(recipe.category);
@@ -883,14 +881,14 @@
                                                 else if (portions === 'Carmen') qty = parseFloat(i.qtyC || 0);
                                                 else qty = (parseFloat(i.qtyM || 0) + parseFloat(i.qtyC || 0));
 
-                                                // --- LOGICA "SENZA QUANTITÀ" ---
-                                                // Se l'unità è q.b. OPPURE la quantità è zero/null
+                                                // --- LOGICA RICETTE ---
+                                                // Se "q.b." o "qb", set unit to empty, qty 0.
+                                                // Se qty <= 0 da ricetta (strano ma possibile), trattato come 0.
                                                 let finalUnit = rawUnit;
                                                 if (rawUnit === 'q.b.' || rawUnit === 'qb' || qty <= 0 || isNaN(qty)) {
-                                                    finalUnit = ''; // Rimuovi unità per visualizzazione pulita
+                                                    finalUnit = '';
                                                     qty = 0;
                                                 } else {
-                                                    // Normalizzazioni standard solo se c'è quantità
                                                     if (!finalUnit) finalUnit = 'pz';
                                                     if (name.toLowerCase().includes('pane') && ['fetta', 'fette', 'pz', 'pezzi'].includes(finalUnit)) { finalUnit = 'gr'; if(qty < 10) qty = qty * 30; }
                                                     if (finalUnit === 'fetta' || finalUnit === 'fette') finalUnit = 'pz';
@@ -917,9 +915,18 @@
                          let qty = parseFloat(e.qty || 0);
                          
                          let finalUnit = rawUnit;
-                         if (rawUnit === 'q.b.' || rawUnit === 'qb' || qty <= 0 || isNaN(qty)) {
+                         // FIX: Allow negative quantities to merge correctly.
+                         // Only treat as unitless checklist item if unit is q.b. or explicitly 0.
+                         if (rawUnit === 'q.b.' || rawUnit === 'qb') {
                             finalUnit = '';
                             qty = 0;
+                         } else if (qty === 0 || isNaN(qty)) {
+                             finalUnit = '';
+                             qty = 0;
+                         } else {
+                             // Apply normalizations to match recipe keys
+                             if (!finalUnit) finalUnit = 'pz';
+                             if (finalUnit === 'g') finalUnit = 'gr';
                          }
 
                          const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
@@ -930,7 +937,13 @@
                          agg[k].q += qty;
                     });
 
-                    setList(Object.values(agg).sort((a,b)=>a.name.localeCompare(b.name)));
+                    // FIX: Filter out items with quantity <= 0 UNLESS they are explicitly unitless checklist items
+                    const filteredList = Object.values(agg).filter(i => {
+                        if (i.u === '') return true; // Always show checklist items
+                        return i.q > 0; // Show measured items only if positive result
+                    });
+
+                    setList(filteredList.sort((a,b)=>a.name.localeCompare(b.name)));
                 });
             }, [curr, selectedDays, recipes, extras]);
 
