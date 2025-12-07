@@ -27,22 +27,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            200: '#a7f3d0',
-                            300: '#6ee7b7',
-                            400: '#34d399',
-                            500: '#10b981', // Emerald 500
-                            600: '#059669',
-                            700: '#047857',
-                            800: '#065f46',
-                            900: '#064e3b',
-                            950: '#022c22',
+                            50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399',
+                            500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22',
                         },
                         surface: {
-                            ground: '#FAFAFA',
-                            card: '#FFFFFF',
-                            subtle: '#F4F4F5'
+                            ground: '#FAFAFA', card: '#FFFFFF', subtle: '#F4F4F5'
                         }
                     },
                     fontFamily: {
@@ -73,23 +62,9 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .overscroll-none { overscroll-behavior: none; }
-        
-        .glass { 
-            background: rgba(255, 255, 255, 0.98); 
-            backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px); 
-            border-bottom: 1px solid rgba(0,0,0,0.08); 
-        }
-        .glass-nav { 
-            background: rgba(255, 255, 255, 0.98); 
-            backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px); 
-            border-top: 1px solid rgba(0,0,0,0.08); 
-        }
-        @keyframes slide-up {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
+        .glass { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.08); }
+        @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
 </head>
@@ -101,7 +76,11 @@
         import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, query, deleteDoc, where, writeBatch, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAZIONE FIREBASE
+        // Global Error Handler
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("Global Error:", message, error);
+        };
+
         const firebaseConfig = {
             apiKey: "AIzaSyCmwDzLGkxL6y6DXG1I4bixQffHb_SGVtc",
             authDomain: "planner-alimentare.firebaseapp.com",
@@ -115,9 +94,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        // --- ICONS ---
-        const loadIcons = () => setTimeout(() => lucide.createIcons(), 50);
+        const loadIcons = () => setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 50);
 
         // --- UTILS ---
         const getWeekId = (date) => {
@@ -134,51 +111,104 @@
             const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
             const monday = new Date(d.setDate(diff));
             const sunday = new Date(new Date(monday).setDate(monday.getDate() + 6));
-            
-            const options = { day: 'numeric', month: 'short' };
-            const start = monday.toLocaleDateString('it-IT', options);
-            const end = sunday.toLocaleDateString('it-IT', options);
-            return `${start} - ${end}`;
+            return `${monday.toLocaleDateString('it-IT', {day:'numeric', month:'short'})} - ${sunday.toLocaleDateString('it-IT', {day:'numeric', month:'short'})}`;
         };
 
-        const getCategoryEmoji = (category) => {
-            switch(category) {
-                case 'Colazione': return '🥐';
-                case 'Pranzo': return '🥗';
-                case 'Cena': return '🥘';
-                case 'Spuntino': return '🍎';
-                case 'Contorno': return '🥦';
-                default: return '🍽️';
-            }
+        const getCategoryEmoji = (c) => {
+            if(c==='Colazione') return '🥐'; if(c==='Pranzo') return '🥗'; if(c==='Cena') return '🥘'; if(c==='Spuntino') return '🍎'; if(c==='Contorno') return '🥦'; return '🍽️';
         };
 
         const FOOD_EMOJIS = [
-            "🥐", "🥯", "🥞", "🍳", "🥓", "🥣", "🥪", "🌮", "🌯", 
-            "🥗", "🥘", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🍤",
-            "🍕", "🍔", "🍟", "🌭", "🥩", "🍗", "🍖", "🐟", 
-            "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑", "🍆", "🥔", "🥕", "🌽", "🌶️", "🥒", "🥦", "🍄", "🥜", "🌰",
-            "🍞", "🧀", "🥚", "🧈", "🥞", "🧇", "🧀",
-            "🍨", "🍧", "🍦", "🍩", "🍪", "🎂", "🍰", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮", "🍯",
-            "☕", "🫖", "🍵", "🥛", "🧃", "🥤", "🧋", "🍺", "🍷", "🍹"
+            "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑",
+            "🍆", "🥔", "🥕", "🌽", "🌶️", "🫑", "🥒", "🥬", "🥦", "🧄", "🧅", "🍄", "🥜", "🌰", "🍠", "🫚", "🫛", "🫘", "🎃", "🫒",
+            "🍞", "🥐", "🥖", "🫓", "🥨", "🥯", "🥞", "🧇", "🧀", "🥚", "🍳", "🥓", "🥣", 
+            "🥩", "🍗", "🍖", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🧆", "🌮", "🌯", "🫔", "🥗", "🥘", "🫕", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🍢", "🍡",
+            "🐟", "🐠", "🐡", "🦈", "🐙", "🐚", "🦀", "🦞", "🦐", "🦑", "🦪",
+            "🍦", "🍧", "🍨", "🍩", "🍪", "🎂", "🍰", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮", "🍯",
+            "🍼", "🥛", "☕", "🫖", "🍵", "🍶", "🍾", "🍷", "🍸", "🍹", "🍺", "🍻", "🥂", "🥃", "🥤", "🧃", "🧉", "🧊"
         ];
-
-        // --- MIGRATION & SEEDING ---
-        const fixDatabaseUnits = async () => {
-            // ... (Seeding logic kept minimal for brevity, functionality preserved)
-        };
 
         // --- COMPONENTS ---
         const Spinner = () => <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-500"></div></div>;
+        
+        const NavBtn = ({ icon, label, active, onClick }) => (
+            <button 
+                onClick={onClick} 
+                className={`flex flex-col items-center justify-center w-16 transition-all duration-300 ${active ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+                <div key={`${icon}-${active}`} className={`p-1.5 rounded-xl transition-all ${active ? 'bg-brand-50 translate-y-[-2px]' : ''}`}>
+                    <i data-lucide={icon} className={`w-6 h-6 stroke-[2px] ${active ? 'fill-brand-200' : ''}`}></i>
+                </div>
+                <span className={`text-[10px] font-semibold mt-1 ${active ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{label}</span>
+            </button>
+        );
 
-        const NavBtn = ({ icon, label, active, onClick }) => {
+        // --- RECIPE SELECTOR MODAL (MISSING IN PREVIOUS VERSION) ---
+        const RecipeSelector = ({ isOpen, onClose, category, recipes, onSelect }) => {
+            const [searchTerm, setSearchTerm] = React.useState('');
+            React.useEffect(() => { loadIcons(); }, [isOpen, searchTerm]);
+            
+            if (!isOpen) return null;
+
+            const filtered = recipes.filter(r => 
+                (r.category === category || category === 'Tutte') && 
+                r.title.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
             return (
-                <button onClick={onClick} className={`flex flex-col items-center justify-center w-16 transition-all duration-300 ${active ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <div key={`${icon}-${active}`} className={`p-1.5 rounded-xl transition-all ${active ? 'bg-brand-50 translate-y-[-2px]' : ''}`}>
-                        <i data-lucide={icon} className={`w-6 h-6 stroke-[2px] ${active ? 'fill-brand-200' : ''}`}></i>
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center animate-fade-in">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="Chiudi selezione"></div>
+                    <div className="bg-white w-full max-w-md h-[85vh] sm:h-[600px] rounded-t-[32px] sm:rounded-3xl flex flex-col z-50 shadow-2xl overflow-hidden pb-safe">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <h3 className="font-display font-bold text-xl text-slate-800">Scegli {category}</h3>
+                            <button onClick={onClose} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div className="p-4 bg-surface-subtle border-b border-slate-100 shrink-0">
+                            <div className="relative">
+                                <i data-lucide="search" className="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
+                                <input 
+                                    className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-brand-500 text-sm font-medium placeholder:text-slate-400" 
+                                    placeholder="Cerca ricetta..." 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-surface-ground">
+                            {filtered.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                                    <i data-lucide="search-x" className="w-12 h-12 mb-3 opacity-50"></i>
+                                    <p>Nessuna ricetta trovata</p>
+                                </div>
+                            ) : (
+                                filtered.map(r => (
+                                    <button 
+                                        key={r.id} 
+                                        onClick={() => onSelect(r)}
+                                        className="w-full p-3 bg-white rounded-2xl flex items-center gap-4 hover:shadow-md transition-all text-left shadow-soft active:scale-[0.98] group"
+                                    >
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm ${r.category === 'Colazione' ? 'bg-yellow-50' : r.category === 'Pranzo' ? 'bg-orange-50' : 'bg-brand-50'}`}>
+                                            {r.emoji || getCategoryEmoji(r.category)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-display font-bold text-slate-800 truncate group-hover:text-brand-600 transition-colors">{r.title}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">{r.time}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-2 bg-slate-50 rounded-full text-brand-600 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                                            <i data-lucide="plus" className="w-5 h-5"></i>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
                     </div>
-                    <span className={`text-[10px] font-semibold mt-1 ${active ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{label}</span>
-                </button>
-            )
+                </div>
+            );
         };
 
         // --- NUTRITION SLOT COMPONENT ---
@@ -338,12 +368,13 @@
             );
         };
 
-        // --- PLANNER (UPDATED: MULTI-RECIPE + SIDE DISH + INDIVIDUAL CONTROLS) ---
+        // --- PLANNER ---
         const Planner = ({ onEditRequest, currentDate, setCurrentDate, selectedDayIndex, setSelectedDayIndex }) => {
             const [plan, setPlan] = React.useState({});
             const [recipes, setRecipes] = React.useState([]);
             const [isGen, setIsGen] = React.useState(false);
-            const [modalConfig, setModalConfig] = React.useState(null); 
+            const [modalConfig, setModalConfig] = React.useState(null); // Used for adding recipes
+            const [itemMenuConfig, setItemMenuConfig] = React.useState(null); // Used for the "..." menu
             const [viewRecipe, setViewRecipe] = React.useState(null);
 
             React.useEffect(() => {
@@ -353,8 +384,7 @@
                 return () => { u1(); u2(); };
             }, [currentDate]);
 
-            // FIX: Added isGen to dependency array to force icon reload after generation
-            React.useEffect(() => { loadIcons(); }, [plan, modalConfig, selectedDayIndex, viewRecipe, isGen]);
+            React.useEffect(() => { loadIcons(); }, [plan, modalConfig, itemMenuConfig, selectedDayIndex, viewRecipe, isGen]);
 
             const days = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
             const slots = ["Colazione", "Spuntino 1", "Pranzo", "Spuntino 2", "Cena"];
@@ -383,10 +413,81 @@
                 await setDoc(doc(db, "plans", getWeekId(currentDate)), { ...plan, [selectedDayIndex]: updatedDay }, { merge: true });
             };
 
-            const getRandomRecipe = (cat) => {
-                const pool = recipes.filter(r => r.category === cat);
+            // NEW: getRandomRecipe with excludeId
+            const getRandomRecipe = (cat, excludeId = null) => {
+                let pool = recipes.filter(r => r.category === cat);
+                if (excludeId) {
+                    const filtered = pool.filter(r => r.id !== excludeId);
+                    if (filtered.length > 0) pool = filtered;
+                }
                 if (!pool.length) return null;
                 return { ...pool[Math.floor(Math.random() * pool.length)], portions: 'both', instanceId: crypto.randomUUID() };
+            };
+
+            // --- HELPER FUNCTIONS FOR SMART LOGIC ---
+            const getRecipeByTitleContains = (query) => {
+                return recipes.find(r => r.title.toLowerCase().includes(query.toLowerCase()));
+            };
+            
+            const getFruitRecipe = (excludeId = null) => {
+                const dryKeywords = ["noci", "mandorle", "cioccolato", "fondente"];
+                let fruitPool = recipes.filter(r => {
+                    if (r.category !== 'Spuntino') return false;
+                    const title = r.title.toLowerCase();
+                    if (dryKeywords.some(k => title.includes(k))) return false;
+                    return true;
+                });
+                if (excludeId) {
+                    const filtered = fruitPool.filter(r => r.id !== excludeId);
+                    if(filtered.length > 0) fruitPool = filtered;
+                }
+                if (!fruitPool.length) return null;
+                return { ...fruitPool[Math.floor(Math.random() * fruitPool.length)], instanceId: crypto.randomUUID() };
+            };
+
+            const getChocolateRecipe = (excludeId = null) => {
+                let pool = recipes.filter(r => r.category === 'Spuntino' && (r.title.toLowerCase().includes("cioccolato") || r.title.toLowerCase().includes("fondente")));
+                if (excludeId) {
+                    const filtered = pool.filter(r => r.id !== excludeId);
+                    if(filtered.length > 0) pool = filtered;
+                }
+                if (!pool.length) return null;
+                return { ...pool[Math.floor(Math.random() * pool.length)], instanceId: crypto.randomUUID() };
+            };
+
+            const getNutsRecipe = (excludeId = null) => {
+                const nutsKeywords = ["noci", "mandorle", "pistacchi", "anacardi", "nocciole"];
+                let pool = recipes.filter(r => {
+                    if (r.category !== 'Spuntino') return false;
+                    const t = r.title.toLowerCase();
+                    return nutsKeywords.some(k => t.includes(k)) && !t.includes("cioccolato");
+                });
+                if (excludeId) {
+                    const filtered = pool.filter(r => r.id !== excludeId);
+                    if(filtered.length > 0) pool = filtered;
+                }
+                if (!pool.length) return null;
+                return { ...pool[Math.floor(Math.random() * pool.length)], instanceId: crypto.randomUUID() };
+            };
+            
+            const getMilkRecipe = (excludeId = null) => {
+                let pool = recipes.filter(r => r.category === 'Colazione' && r.title.toLowerCase().includes('latte'));
+                if (excludeId) {
+                     const filtered = pool.filter(r => r.id !== excludeId);
+                     if(filtered.length > 0) pool = filtered;
+                }
+                if (!pool.length) return null;
+                return { ...pool[Math.floor(Math.random() * pool.length)], instanceId: crypto.randomUUID() };
+            };
+
+            const getBreakfastFoodRecipe = (excludeId = null) => {
+                let pool = recipes.filter(r => r.category === 'Colazione' && !r.title.toLowerCase().includes('latte'));
+                if (excludeId) {
+                     const filtered = pool.filter(r => r.id !== excludeId);
+                     if(filtered.length > 0) pool = filtered;
+                }
+                if (!pool.length) return null;
+                return { ...pool[Math.floor(Math.random() * pool.length)], instanceId: crypto.randomUUID() };
             };
 
             const generateWeek = async () => {
@@ -396,12 +497,30 @@
                 days.forEach((_, idx) => {
                     newPlan[idx] = {};
                     slots.forEach(s => {
-                        const mainCat = cats[s];
                         let items = [];
                         let side = null;
-                        const r = getRandomRecipe(mainCat);
-                        if (r) items.push(r);
-                        if (s === 'Pranzo' || s === 'Cena') {
+                        if (s === 'Colazione') {
+                            const milk = getMilkRecipe();
+                            const food = getBreakfastFoodRecipe();
+                            if (milk) items.push({ ...milk, portions: 'both' });
+                            if (food) items.push({ ...food, portions: 'both' });
+                        } 
+                        else if (s === 'Spuntino 1') { 
+                             const choco = getChocolateRecipe();
+                             const fruit = getFruitRecipe();
+                             if (choco) items.push({ ...choco, portions: 'Martina' });
+                             if (fruit) items.push({ ...fruit, portions: 'Martina' });
+                        }
+                        else if (s === 'Spuntino 2') { 
+                             const nuts = getNutsRecipe();
+                             const fruit = getFruitRecipe();
+                             if (nuts) items.push({ ...nuts, portions: 'both' });
+                             if (fruit) items.push({ ...fruit, portions: 'both' });
+                        }
+                        else {
+                            const mainCat = cats[s];
+                            const r = getRandomRecipe(mainCat);
+                            if (r) items.push(r);
                             const sr = getRandomRecipe('Contorno');
                             if (sr) side = sr;
                         }
@@ -413,16 +532,45 @@
             };
 
             const randomizeSlot = async (slot) => {
+                let newItems = [];
+                let newSide = null;
                 const { items, side } = getSlotData(slot);
-                const mainCat = cats[slot];
-                const newItems = items.map(item => {
-                    const r = getRandomRecipe(mainCat);
-                    return r ? { ...r, portions: item.portions } : item;
-                });
-                let newSide = side;
-                if (side) {
-                    const r = getRandomRecipe('Contorno');
-                    if (r) newSide = { ...r, portions: side.portions };
+
+                if (slot === 'Colazione') {
+                     const currentMilk = items.find(i => i.title.toLowerCase().includes('latte'));
+                     const milk = getMilkRecipe(currentMilk?.id);
+                     const currentFood = items.find(i => !i.title.toLowerCase().includes('latte'));
+                     const food = getBreakfastFoodRecipe(currentFood?.id);
+                     if (milk) newItems.push({ ...milk, portions: 'both' });
+                     if (food) newItems.push({ ...food, portions: 'both' });
+                }
+                else if (slot === 'Spuntino 1') { 
+                     const currentChoco = items.find(i => i.title.toLowerCase().includes('cioccolato') || i.title.toLowerCase().includes('fondente'));
+                     const choco = getChocolateRecipe(currentChoco?.id);
+                     const currentFruit = items.find(i => !i.title.toLowerCase().includes('cioccolato') && !i.title.toLowerCase().includes('fondente'));
+                     const fruit = getFruitRecipe(currentFruit?.id);
+                     if (choco) newItems.push({ ...choco, portions: 'Martina' });
+                     if (fruit) newItems.push({ ...fruit, portions: 'Martina' });
+                }
+                else if (slot === 'Spuntino 2') { 
+                     const nutsKeywords = ["noci", "mandorle", "pistacchi", "anacardi", "nocciole"];
+                     const currentNut = items.find(i => nutsKeywords.some(k => i.title.toLowerCase().includes(k)));
+                     const nuts = getNutsRecipe(currentNut?.id);
+                     const currentFruit = items.find(i => !nutsKeywords.some(k => i.title.toLowerCase().includes(k)));
+                     const fruit = getFruitRecipe(currentFruit?.id);
+                     if (nuts) newItems.push({ ...nuts, portions: 'both' });
+                     if (fruit) newItems.push({ ...fruit, portions: 'both' });
+                }
+                else {
+                    const mainCat = cats[slot];
+                    newItems = items.map(item => {
+                        const r = getRandomRecipe(mainCat, item.id);
+                        return r ? { ...r, portions: item.portions } : item;
+                    });
+                    if (side) {
+                        const r = getRandomRecipe('Contorno', side.id);
+                        if (r) newSide = { ...r, portions: side.portions };
+                    }
                 }
                 await updateSlot(slot, newItems, newSide);
             };
@@ -430,7 +578,10 @@
             const randomizeSpecificItem = async (slot, index, type) => {
                 const { items, side } = getSlotData(slot);
                 const category = type === 'side' ? 'Contorno' : cats[slot];
-                const r = getRandomRecipe(category);
+                let excludeId = null;
+                if (type === 'side' && side) excludeId = side.id;
+                else if (type !== 'side' && items[index]) excludeId = items[index].id;
+                const r = getRandomRecipe(category, excludeId);
                 if (!r) return alert("Nessuna ricetta disponibile!");
                 if (type === 'side') {
                     if (side) await updateSlot(slot, items, { ...r, portions: side.portions });
@@ -447,49 +598,27 @@
                 const { slot, type, index, action } = modalConfig;
                 const { items, side } = getSlotData(slot);
                 const recipeWithDefaults = { ...recipe, portions: 'both', instanceId: crypto.randomUUID() };
-
                 if (action === 'replace') {
-                    if (type === 'side') {
-                        const prevPortions = side ? side.portions : 'both';
-                        await updateSlot(slot, items, { ...recipeWithDefaults, portions: prevPortions });
-                    } else {
-                        const newItems = [...items];
-                        if (newItems[index]) {
-                            const prevPortions = newItems[index].portions;
-                            newItems[index] = { ...recipeWithDefaults, portions: prevPortions };
-                            await updateSlot(slot, newItems, side);
-                        }
-                    }
+                    if (type === 'side') { const prevPortions = side ? side.portions : 'both'; await updateSlot(slot, items, { ...recipeWithDefaults, portions: prevPortions }); } 
+                    else { const newItems = [...items]; if (newItems[index]) { const prevPortions = newItems[index].portions; newItems[index] = { ...recipeWithDefaults, portions: prevPortions }; await updateSlot(slot, newItems, side); } }
                 } else {
-                    if (type === 'side') {
-                        await updateSlot(slot, items, recipeWithDefaults);
-                    } else {
-                        await updateSlot(slot, [...items, recipeWithDefaults], side);
-                    }
+                    if (type === 'side') await updateSlot(slot, items, recipeWithDefaults);
+                    else await updateSlot(slot, [...items, recipeWithDefaults], side);
                 }
                 setModalConfig(null);
+                if (itemMenuConfig) setItemMenuConfig(null);
             };
 
             const removeRecipeFromSlot = async (slot, index, type) => {
                 const { items, side } = getSlotData(slot);
                 if (type === 'side') await updateSlot(slot, items, null);
-                else {
-                    const newItems = items.filter((_, i) => i !== index);
-                    await updateSlot(slot, newItems, side);
-                }
+                else { const newItems = items.filter((_, i) => i !== index); await updateSlot(slot, newItems, side); }
             };
 
             const updateRecipePortion = async (slot, index, type, mode) => {
                 const { items, side } = getSlotData(slot);
-                if (type === 'side') {
-                    if (side) await updateSlot(slot, items, { ...side, portions: mode });
-                } else {
-                    const newItems = [...items];
-                    if (newItems[index]) {
-                        newItems[index] = { ...newItems[index], portions: mode };
-                        await updateSlot(slot, newItems, side);
-                    }
-                }
+                if (type === 'side') { if (side) await updateSlot(slot, items, { ...side, portions: mode }); } 
+                else { const newItems = [...items]; if (newItems[index]) { newItems[index] = { ...newItems[index], portions: mode }; await updateSlot(slot, newItems, side); } }
             };
 
             const addRecipeToSlot = async (slot, recipe, type) => {
@@ -500,47 +629,30 @@
                 setModalConfig(null);
             };
 
-            // FIX: Added useEffect to load icons on mount for every slot item
+            const replaceRecipeInSlot = async (recipe) => {
+                 if (!itemMenuConfig) return;
+                 const { slot, index, type } = itemMenuConfig;
+                 const { items, side } = getSlotData(slot);
+                 const recipeWithDefaults = { ...recipe, portions: 'both', instanceId: crypto.randomUUID() };
+                 if (type === 'side') { const prevPortions = side ? side.portions : 'both'; await updateSlot(slot, items, { ...recipeWithDefaults, portions: prevPortions }); } 
+                 else { const newItems = [...items]; if (newItems[index]) { const prevPortions = newItems[index].portions; newItems[index] = { ...recipeWithDefaults, portions: prevPortions }; await updateSlot(slot, newItems, side); } }
+                 setModalConfig(null);
+                 setItemMenuConfig(null);
+            };
+
             const SlotItem = ({ recipe, index, type, slot }) => {
                 React.useEffect(() => { loadIcons(); }, []);
                 const displayEmoji = recipe.emoji || getCategoryEmoji(recipe.category);
                 const portions = recipe.portions || 'both';
-
                 return (
-                    <div 
-                        className="bg-brand-50 border border-brand-100 rounded-2xl p-3 flex flex-col gap-2 relative shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); setViewRecipe({ ...recipe, portions }); }}
-                        role="button"
-                        aria-label={`Dettagli ricetta: ${recipe.title}`}
-                    >
+                    <div className="bg-brand-50 border border-brand-100 rounded-2xl p-3 flex flex-col gap-2 relative shadow-sm active:scale-[0.99] transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); setViewRecipe({ ...recipe, portions }); }} role="button" aria-label={`Dettagli ricetta: ${recipe.title}`}>
                         <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-display font-bold text-slate-800 text-sm truncate">{recipe.title}</h4>
-                                <div className="flex gap-2 text-[10px] text-slate-500 mt-0.5">
-                                    <span className="flex items-center gap-0.5"><i data-lucide="clock" className="w-3 h-3"></i> {recipe.time}</span>
-                                </div>
-                            </div>
+                            <div className="flex-1 min-w-0"><h4 className="font-display font-bold text-slate-800 text-sm truncate">{recipe.title}</h4><div className="flex gap-2 text-[10px] text-slate-500 mt-0.5"><span className="flex items-center gap-0.5"><i data-lucide="clock" className="w-3 h-3"></i> {recipe.time}</span></div></div>
                             <div className="text-2xl ml-2 shrink-0" aria-hidden="true">{displayEmoji}</div>
                         </div>
-
                         <div className="flex justify-between items-center mt-1" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex bg-white rounded-lg p-0.5 gap-0.5" role="group" aria-label="Seleziona porzioni">
-                                {['Martina', 'Carmen', 'both'].map(m => (
-                                    <button 
-                                        key={m}
-                                        onClick={() => updateRecipePortion(slot, index, type, m)}
-                                        aria-label={`Porzione per ${m}`}
-                                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
-                                    >
-                                        {m === 'both' ? 'T' : m.charAt(0)}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex gap-1">
-                                <button onClick={() => setModalConfig({ slot, type, index, action: 'replace' })} aria-label="Sostituisci ricetta" className="text-brand-600 hover:text-brand-800 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="search" className="w-5 h-5"></i></button>
-                                <button onClick={() => randomizeSpecificItem(slot, index, type)} aria-label="Cambia casualmente questa ricetta" className="text-brand-600 hover:text-brand-800 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="rotate-cw" className="w-5 h-5"></i></button>
-                                <button onClick={() => removeRecipeFromSlot(slot, index, type)} aria-label="Rimuovi ricetta" className="text-red-400 hover:text-red-600 p-3 bg-white rounded-xl shadow-sm"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                            </div>
+                            <div className="flex bg-white rounded-lg p-0.5 gap-0.5" role="group" aria-label="Seleziona porzioni">{['Martina', 'Carmen', 'both'].map(m => <button key={m} onClick={() => updateRecipePortion(slot, index, type, m)} aria-label={`Porzione per ${m}`} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${portions === m ? 'bg-brand-50 shadow text-brand-600' : 'text-slate-500 hover:text-slate-700'}`}>{m === 'both' ? 'T' : m.charAt(0)}</button>)}</div>
+                            <div className="flex gap-1"><button onClick={() => setItemMenuConfig({ slot, index, type, recipe })} aria-label="Opzioni ricetta" className="text-slate-400 hover:text-brand-600 p-2 rounded-xl hover:bg-white transition-colors"><i data-lucide="more-horizontal" className="w-5 h-5"></i></button></div>
                         </div>
                     </div>
                 );
@@ -548,222 +660,70 @@
 
             return (
                 <div className="space-y-6 animate-fade-in">
-                    {/* Header Planner */}
                     <div className="bg-surface-card p-4 rounded-3xl shadow-soft flex items-center justify-between">
-                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d); }} aria-label="Settimana precedente" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left" className="text-slate-400"></i></button>
-                        <div className="text-center">
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Settimana corrente</p>
-                            <h2 className="text-lg font-display font-bold text-slate-800">{getWeekRangeString(currentDate)}</h2>
-                        </div>
-                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d); }} aria-label="Settimana successiva" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right" className="text-slate-400"></i></button>
+                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d); setSelectedDayIndex(0); }} aria-label="Settimana precedente" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left" className="text-slate-400"></i></button>
+                        <div className="text-center"><p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Settimana corrente</p><h2 className="text-lg font-display font-bold text-slate-800">{getWeekRangeString(currentDate)}</h2></div>
+                        <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d); setSelectedDayIndex(0); }} aria-label="Settimana successiva" className="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right" className="text-slate-400"></i></button>
                     </div>
 
-                    {/* Days Row */}
-                    <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar px-1" role="tablist">
-                        {days.map((day, idx) => (
-                            <button key={day} onClick={() => setSelectedDayIndex(idx)}
-                                role="tab" aria-selected={selectedDayIndex === idx}
-                                className={`flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 ${selectedDayIndex === idx ? 'bg-brand-500 text-white shadow-glow translate-y-[-2px]' : 'bg-white text-slate-400 shadow-sm'}`}>
-                                <span className="text-xs font-medium opacity-80">{day}</span>
-                                <div className={`w-1.5 h-1.5 rounded-full ${selectedDayIndex === idx ? 'bg-white' : 'bg-transparent'}`}></div>
-                            </button>
-                        ))}
-                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar px-1" role="tablist">{days.map((day, idx) => <button key={day} onClick={() => setSelectedDayIndex(idx)} role="tab" aria-selected={selectedDayIndex === idx} className={`flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 ${selectedDayIndex === idx ? 'bg-brand-500 text-white shadow-glow translate-y-[-2px]' : 'bg-white text-slate-400 shadow-sm'}`}><span className="text-xs font-medium opacity-80">{day}</span><div className={`w-1.5 h-1.5 rounded-full ${selectedDayIndex === idx ? 'bg-white' : 'bg-transparent'}`}></div></button>)}</div>
 
-                    <button onClick={generateWeek} disabled={isGen} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-display font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                        <i data-lucide="rotate-cw" className={`w-5 h-5 ${isGen ? 'animate-spin' : ''}`}></i>
-                        {isGen ? 'Generazione...' : 'Genera Menu Casuale'}
-                    </button>
+                    <button onClick={generateWeek} disabled={isGen} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-display font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><i data-lucide="rotate-cw" className={`w-5 h-5 ${isGen ? 'animate-spin' : ''}`}></i>{isGen ? 'Generazione...' : 'Genera Menu Casuale'}</button>
 
                     <div className="space-y-4">
                         {slots.map(slot => {
                             const { items, side } = getSlotData(slot);
                             const hasSide = slot === 'Pranzo' || slot === 'Cena';
-
                             return (
                                 <div key={slot} className="bg-white rounded-[24px] p-4 shadow-soft transition-all">
-                                    {/* Slot Header */}
                                     <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">{slot}</span>
-                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} aria-label={`Aggiungi ricetta a ${slot}`} className="w-9 h-9 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center hover:bg-brand-100 transition-colors"><i data-lucide="plus" className="w-5 h-5"></i></button>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} aria-label={`Cerca ricetta per ${slot}`} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-4 h-4"></i></button>
-                                            <button onClick={() => randomizeSlot(slot)} aria-label={`Rigenera tutto il ${slot}`} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button>
-                                        </div>
+                                        <div className="flex items-center gap-2"><span className="text-xs font-bold text-brand-600 uppercase tracking-wider">{slot}</span><button onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} aria-label={`Aggiungi ricetta a ${slot}`} className="w-9 h-9 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center hover:bg-brand-100 transition-colors"><i data-lucide="plus" className="w-5 h-5"></i></button></div>
+                                        <div className="flex gap-1"><button onClick={() => randomizeSlot(slot)} aria-label={`Rigenera tutto il ${slot}`} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button></div>
                                     </div>
-
-                                    {/* Main Dishes List */}
                                     <div className="space-y-2">
-                                        {items.length === 0 ? (
-                                            <div onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="border-2 border-dashed border-slate-100 rounded-2xl p-4 text-center text-slate-400 text-xs font-medium cursor-pointer hover:border-brand-200 hover:text-brand-600 transition-colors">Aggiungi piatto principale</div>
-                                        ) : (
-                                            items.map((recipe, idx) => (
-                                                <SlotItem key={recipe.instanceId || idx} recipe={recipe} index={idx} type="main" slot={slot} />
-                                            ))
-                                        )}
+                                        {items.length === 0 ? <div onClick={() => setModalConfig({ slot, type: 'main', action: 'add' })} className="border-2 border-dashed border-slate-100 rounded-2xl p-4 text-center text-slate-300 text-xs font-medium cursor-pointer hover:border-brand-200 hover:text-brand-600 transition-colors">Aggiungi piatto principale</div> : items.map((recipe, idx) => (
+                                            <SlotItem key={recipe.instanceId || idx} recipe={recipe} index={idx} type="main" slot={slot} />
+                                        ))}
                                     </div>
-
-                                    {/* Side Dish Section */}
                                     {hasSide && (
                                         <div className="mt-4 pt-3 border-t border-slate-50">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="carrot" className="w-3 h-3"></i> Contorno</span>
-                                                <div className="flex gap-1">
-                                                    <button onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} aria-label="Cerca contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-4 h-4"></i></button>
-                                                    <button onClick={() => randomizeSlot(slot)} aria-label="Rigenera contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button>
-                                                </div>
+                                                <div className="flex gap-1"><button onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} aria-label="Cerca contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="search" className="w-4 h-4"></i></button><button onClick={() => randomizeSlot(slot)} aria-label="Rigenera contorno" className="p-2 bg-slate-50 rounded-full text-slate-500 hover:text-brand-600 transition-colors"><i data-lucide="rotate-cw" className="w-4 h-4"></i></button></div>
                                             </div>
-                                            {side ? (
-                                                <SlotItem recipe={side} index={0} type="side" slot={slot} />
-                                            ) : (
-                                                <div onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} className="bg-slate-50 rounded-xl p-3 text-center text-slate-400 text-xs font-medium cursor-pointer hover:bg-slate-100">Seleziona contorno</div>
-                                            )}
+                                            {side ? <SlotItem recipe={side} index={0} type="side" slot={slot} /> : <div onClick={() => setModalConfig({ slot, type: 'side', action: 'add' })} className="bg-slate-50 rounded-xl p-3 text-center text-slate-400 text-xs font-medium cursor-pointer hover:bg-slate-100">Seleziona contorno</div>}
                                         </div>
                                     )}
                                 </div>
                             );
                         })}
                     </div>
-
-                    {modalConfig && (
-                        <RecipeSelector 
-                            isOpen={true} 
-                            onClose={() => setModalConfig(null)} 
-                            category={modalConfig.type === 'side' ? 'Contorno' : cats[modalConfig.slot]} 
-                            recipes={recipes} 
-                            onSelect={handleRecipeSelect} 
-                        />
-                    )}
-
-                    {viewRecipe && (
-                        <RecipeDetailView 
-                            key={viewRecipe.id} 
-                            recipe={viewRecipe} 
-                            onClose={() => setViewRecipe(null)}
-                            onEdit={() => { setViewRecipe(null); onEditRequest(viewRecipe); }}
-                            onDelete={() => { 
-                                if(confirm("Vuoi davvero eliminare questa ricetta?")) {
-                                    deleteDoc(doc(db, 'recipes', viewRecipe.id)); 
-                                    setViewRecipe(null);
-                                }
-                            }}
-                        />
-                    )}
-                </div>
-            );
-        };
-
-        // --- RECIPE SELECTOR (UPDATED WITH FILTERS) ---
-        const RecipeSelector = ({ isOpen, onClose, category, onSelect, recipes }) => {
-            const [q, setQ] = React.useState("");
-            const [filterTime, setFilterTime] = React.useState('Tutte');
-            const [showFilters, setShowFilters] = React.useState(false);
-            const listRef = React.useRef(null);
-            
-            const filtered = recipes.filter(r => {
-                let matchCat = false;
-                if (category === 'Pranzo' || category === 'Cena') {
-                    // Se cerco per pranzo/cena, accetto entrambi (ma non contorno se non richiesto)
-                    matchCat = (r.category === 'Pranzo' || r.category === 'Cena');
-                } else {
-                    matchCat = r.category === category;
-                }
-                
-                const matchTime = filterTime === 'Tutte' || r.time === filterTime;
-                const lowerQ = q.toLowerCase();
-                const matchSearch = r.title.toLowerCase().includes(lowerQ) || 
-                                    (r.ingredients && r.ingredients.some(i => i.name.toLowerCase().includes(lowerQ)));
-                return matchCat && matchTime && matchSearch;
-            });
-
-            React.useEffect(() => { loadIcons(); }, [filtered, isOpen, showFilters]);
-            
-            // Logic to lock body scroll
-            React.useLayoutEffect(() => {
-                const scrollY = window.scrollY; 
-                document.body.style.position = 'fixed'; 
-                document.body.style.top = `-${scrollY}px`;
-                document.body.style.width = '100%';
-                if(listRef.current) listRef.current.scrollTop = 0;
-                return () => { 
-                    document.body.style.position = '';
-                    document.body.style.top = '';
-                    document.body.style.width = '';
-                    window.scrollTo(0, scrollY);
-                };
-            }, []);
-
-            // Dynamic Title
-            let titleText = category;
-            if (category === 'Pranzo' || category === 'Cena') titleText = "Scegli Pranzo/Cena";
-            if (category === 'Contorno') titleText = "Scegli Contorno";
-
-            return (
-                <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex justify-center items-end sm:items-center pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-auto" onClick={onClose} onTouchMove={(e) => e.preventDefault()} aria-label="Chiudi selezione"></div>
-                    <div className="w-full max-w-md bg-white h-[85vh] rounded-t-[32px] sm:rounded-3xl shadow-2xl z-50 pointer-events-auto flex flex-col animate-fadeIn overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <h3 className="font-display font-bold text-xl text-slate-800">{titleText}</h3>
-                            <button onClick={onClose} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
-                        </div>
-                        <div className="px-6 py-4 bg-slate-50 space-y-3">
-                            <div className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <i data-lucide="search" className="absolute left-3 top-3.5 w-5 h-5 text-slate-400"></i>
-                                    <input 
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-brand-500" 
-                                        placeholder="Cerca..." 
-                                        value={q} 
-                                        onChange={e=>setQ(e.target.value)} 
-                                        aria-label="Cerca ricetta"
-                                    />
+                    {modalConfig && (<RecipeSelector isOpen={true} onClose={() => setModalConfig(null)} category={modalConfig.type === 'side' ? 'Contorno' : cats[modalConfig.slot]} recipes={recipes} onSelect={modalConfig.action === 'replace' ? replaceRecipeInSlot : (r) => addRecipeToSlot(modalConfig.slot, r, modalConfig.type)} />)}
+                    {itemMenuConfig && (
+                        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
+                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setItemMenuConfig(null)} aria-label="Chiudi menu"></div>
+                            <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-10">
+                                <div className="flex items-center gap-3 mb-6"><span className="text-3xl">{itemMenuConfig.recipe.emoji || getCategoryEmoji(itemMenuConfig.recipe.category)}</span><div className="flex-1"><h3 className="font-display font-bold text-xl text-slate-800 leading-tight">{itemMenuConfig.recipe.title}</h3><p className="text-xs text-slate-400 uppercase tracking-wide font-bold mt-1">{itemMenuConfig.type === 'side' ? 'Contorno' : itemMenuConfig.slot}</p></div><button onClick={() => setItemMenuConfig(null)} className="p-2 bg-slate-100 rounded-full"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button></div>
+                                <div className="space-y-3">
+                                    <button onClick={() => { randomizeSpecificItem(itemMenuConfig.slot, itemMenuConfig.index, itemMenuConfig.type); setItemMenuConfig(null); }} className="w-full p-4 bg-brand-50 hover:bg-brand-100 rounded-2xl flex items-center gap-4 text-brand-700 font-bold transition-colors active:scale-[0.98]"><div className="bg-white p-2 rounded-xl shadow-sm"><i data-lucide="rotate-cw" className="w-6 h-6"></i></div>Cambia Casualmente</button>
+                                    <button onClick={() => { setModalConfig({ ...itemMenuConfig, action: 'replace' }); setItemMenuConfig(null); }} className="w-full p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center gap-4 text-slate-700 font-bold transition-colors active:scale-[0.98]"><div className="bg-white p-2 rounded-xl shadow-sm"><i data-lucide="search" className="w-6 h-6"></i></div>Sostituisci Manualmente</button>
+                                    <button onClick={() => { removeRecipeFromSlot(itemMenuConfig.slot, itemMenuConfig.index, itemMenuConfig.type); setItemMenuConfig(null); }} className="w-full p-4 bg-red-50 hover:bg-red-100 rounded-2xl flex items-center gap-4 text-red-600 font-bold transition-colors active:scale-[0.98]"><div className="bg-white p-2 rounded-xl shadow-sm"><i data-lucide="trash-2" className="w-6 h-6"></i></div>Rimuovi dal Piano</button>
                                 </div>
-                                <button onClick={() => setShowFilters(!showFilters)} aria-label="Mostra filtri" className={`p-3 rounded-xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-sm'}`}><i data-lucide="sliders-horizontal" className="w-5 h-5"></i></button>
                             </div>
-                            {showFilters && (
-                                <div className="flex gap-2 animate-fade-in">
-                                    {['Tutte', 'breve', 'media', 'lunga'].map(t => (
-                                        <button key={t} onClick={() => setFilterTime(t)} className={`flex-1 py-2 rounded-lg text-xs font-bold capitalize transition-all ${filterTime === t ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}>{t}</button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                        <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-2 overscroll-none">
-                            {filtered.length === 0 ? <div className="text-center text-slate-400 mt-10">Nessuna ricetta trovata.</div> : 
-                                filtered.map(r => (
-                                    <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left p-4 rounded-2xl border border-slate-100 hover:bg-brand-50 hover:border-brand-200 transition-colors group flex justify-between items-center">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-2xl">{r.emoji || getCategoryEmoji(r.category)}</span>
-                                            <div className="flex flex-col"><span className="font-display font-semibold text-slate-700 group-hover:text-brand-700">{r.title}</span><span className="text-xs text-slate-400">{r.time}</span></div>
-                                        </div>
-                                        <div className="bg-brand-100 text-brand-600 p-1.5 rounded-full"><i data-lucide="plus" className="w-4 h-4"></i></div>
-                                    </button>
-                                ))
-                            }
-                        </div>
-                    </div>
+                    )}
+                    {viewRecipe && (<RecipeDetailView key={viewRecipe.id} recipe={viewRecipe} onClose={() => setViewRecipe(null)} onEdit={() => { setViewRecipe(null); onEditRequest(viewRecipe); }} onDelete={() => { if(confirm("Vuoi davvero eliminare questa ricetta?")) { deleteDoc(doc(db, 'recipes', viewRecipe.id)); setViewRecipe(null); }}} />)}
                 </div>
             );
         };
 
-        // --- RECIPE BOOK (UPDATED WITH FILTERS) ---
-        const RecipeBook = ({ onEditRequest }) => {
+        // --- 5. RecipeBook (UPDATED STATE LIFTING) ---
+        const RecipeBook = ({ onEditRequest, filter, setFilter, filterTime, setFilterTime, q, setQ, showFilters, setShowFilters }) => {
             const [recipes, setRecipes] = React.useState([]);
-            const [filter, setFilter] = React.useState('Tutte');
-            const [q, setQ] = React.useState('');
             const [sel, setSel] = React.useState(null);
-            const [filterTime, setFilterTime] = React.useState('Tutte');
-            const [showFilters, setShowFilters] = React.useState(false);
-
-            React.useEffect(() => {
-                const unsub = onSnapshot(query(collection(db, "recipes")), s => setRecipes(s.docs.map(d=>({id:d.id, ...d.data()}))));
-                return () => unsub();
-            }, []);
-
+            // Removed local states
+            React.useEffect(() => { const unsub = onSnapshot(query(collection(db, "recipes")), s => setRecipes(s.docs.map(d=>({id:d.id, ...d.data()})))); return () => unsub(); }, []);
             React.useEffect(() => { loadIcons(); }, [recipes, sel, filter, filterTime, showFilters]);
-
             const filtered = recipes.filter(r => {
                 const matchCat = filter === 'Tutte' || r.category === filter;
                 const matchTime = filterTime === 'Tutte' || r.time === filterTime;
@@ -771,63 +731,26 @@
                 const matchSearch = r.title.toLowerCase().includes(lowerQ) || (r.ingredients && r.ingredients.some(i => i.name.toLowerCase().includes(lowerQ)));
                 return matchCat && matchTime && matchSearch;
             });
-
             return (
                 <div className="animate-fade-in">
                     <div className="sticky top-0 bg-surface-ground z-10 py-2 space-y-3 mb-4">
-                        <div className="flex gap-2 px-1">
-                            <div className="relative flex-1">
-                                <i data-lucide="search" className="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
-                                <input 
-                                    className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl shadow-soft border-none focus:ring-2 focus:ring-brand-500" 
-                                    placeholder="Cerca..." 
-                                    value={q} 
-                                    onChange={e=>setQ(e.target.value)} 
-                                    aria-label="Cerca ricetta nel ricettario"
-                                />
-                            </div>
-                            <button onClick={() => setShowFilters(!showFilters)} aria-label="Filtri" className={`p-3 rounded-2xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-soft'}`}><i data-lucide="sliders-horizontal" className="w-6 h-6"></i></button>
+                        <div className="flex gap-2 px-1"><div className="relative flex-1"><i data-lucide="search" className="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i><input className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl shadow-soft border-none focus:ring-2 focus:ring-brand-500" placeholder="Cerca..." value={q} onChange={e=>setQ(e.target.value)} aria-label="Cerca ricetta nel ricettario" /></div><button onClick={() => setShowFilters(!showFilters)} aria-label="Filtri" className={`p-3 rounded-2xl transition-all ${showFilters ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-400 shadow-soft'}`}><i data-lucide="sliders-horizontal" className="w-6 h-6"></i></button></div>
+                        {showFilters && (<div className="space-y-3 animate-fade-in px-1"><div className="flex gap-2">{['Tutte', 'breve', 'media', 'lunga'].map(t => <button key={t} onClick={() => setFilterTime(t)} className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all ${filterTime === t ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}><div className="flex items-center justify-center gap-1"><i data-lucide="clock" className="w-3 h-3"></i>{t}</div></button>)}</div><div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">{['Tutte', 'Colazione', 'Pranzo', 'Cena', 'Spuntino', 'Contorno'].map(f => <button key={f} onClick={() => setFilter(f)} className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${filter===f ? 'bg-brand-600 text-white shadow-glow' : 'bg-white text-slate-500 shadow-sm'}`}>{f}</button>)}</div></div>)}
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">{filtered.map(r => (
+                        <div key={r.id} onClick={() => setSel(r)} className="bg-white p-2 rounded-[24px] shadow-soft flex items-center gap-4 cursor-pointer hover:scale-[1.01] transition-transform">
+                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${r.category === 'Colazione' ? 'bg-yellow-50 text-yellow-500' : r.category === 'Pranzo' ? 'bg-orange-50 text-orange-500' : r.category === 'Cena' ? 'bg-indigo-50 text-indigo-500' : r.category === 'Contorno' ? 'bg-green-50 text-green-500' : 'bg-pink-50 text-pink-500'}`}><span className="text-4xl">{r.emoji || getCategoryEmoji(r.category)}</span></div>
+                            <div className="flex-1 py-2"><h3 className="font-display font-bold text-lg text-slate-800 leading-tight mb-1">{r.title}</h3><div className="flex gap-3 text-xs font-medium text-slate-400"><span className="uppercase">{r.category}</span><span>•</span><span>{r.time}</span></div></div>
+                            <button onClick={(e) => { e.stopPropagation(); onEditRequest(r); }} aria-label="Modifica" className="p-3 text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-xl transition-colors"><i data-lucide="pencil" className="w-5 h-5"></i></button>
+                            <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db,'recipes',r.id));}} aria-label="Elimina" className="p-3 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                         </div>
-                        {showFilters && (
-                            <div className="space-y-3 animate-fade-in px-1">
-                                <div className="flex gap-2">
-                                    {['Tutte', 'breve', 'media', 'lunga'].map(t => (
-                                        <button key={t} onClick={() => setFilterTime(t)} className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all ${filterTime === t ? 'bg-brand-500 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}><div className="flex items-center justify-center gap-1"><i data-lucide="clock" className="w-3 h-3"></i>{t}</div></button>
-                                    ))}
-                                </div>
-                                <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                                    {['Tutte', 'Colazione', 'Pranzo', 'Cena', 'Spuntino', 'Contorno'].map(f => (
-                                        <button key={f} onClick={() => setFilter(f)} className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${filter===f ? 'bg-brand-600 text-white shadow-glow' : 'bg-white text-slate-500 shadow-sm'}`}>{f}</button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                        {filtered.map(r => (
-                            <div key={r.id} onClick={() => setSel(r)} className="bg-white p-2 rounded-[24px] shadow-soft flex items-center gap-4 cursor-pointer hover:scale-[1.01] transition-transform">
-                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${r.category === 'Colazione' ? 'bg-yellow-50 text-yellow-500' : r.category === 'Pranzo' ? 'bg-orange-50 text-orange-500' : r.category === 'Cena' ? 'bg-indigo-50 text-indigo-500' : r.category === 'Contorno' ? 'bg-green-50 text-green-500' : 'bg-pink-50 text-pink-500'}`}>
-                                    <span className="text-4xl">{r.emoji || getCategoryEmoji(r.category)}</span>
-                                </div>
-                                <div className="flex-1 py-2">
-                                    <h3 className="font-display font-bold text-lg text-slate-800 leading-tight mb-1">{r.title}</h3>
-                                    <div className="flex gap-3 text-xs font-medium text-slate-400"><span className="uppercase">{r.category}</span><span>•</span><span>{r.time}</span></div>
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); onEditRequest(r); }} aria-label="Modifica" className="p-3 text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-xl transition-colors"><i data-lucide="pencil" className="w-5 h-5"></i></button>
-                                <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db,'recipes',r.id));}} aria-label="Elimina" className="p-3 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {sel && (
-                        <RecipeDetailView key={sel.id} recipe={sel} onClose={() => setSel(null)} onEdit={() => { setSel(null); onEditRequest(sel); }} onDelete={() => { deleteDoc(doc(db,'recipes',sel.id)); setSel(null); }} />
-                    )}
+                    ))}</div>
+                    {sel && (<RecipeDetailView key={sel.id} recipe={sel} onClose={() => setSel(null)} onEdit={() => { setSel(null); onEditRequest(sel); }} onDelete={() => { deleteDoc(doc(db,'recipes',sel.id)); setSel(null); }} />)}
                 </div>
             );
         };
 
-        // --- SHOPPING LIST (UPDATED TO HANDLE NO-QTY ITEMS) ---
+        // --- 6. ShoppingList ---
         const ShoppingList = ({ selectedDays, setSelectedDays, recipes }) => {
             const [curr, setCurr] = React.useState(new Date());
             const [list, setList] = React.useState([]);
@@ -837,19 +760,13 @@
             const [newExtName, setNewExtName] = React.useState('');
             const [newExtQty, setNewExtQty] = React.useState('');
             const [newExtUnit, setNewExtUnit] = React.useState('gr');
-
-            const toggleDay = (dayIndex) => {
-                if (selectedDays.includes(dayIndex)) setSelectedDays(selectedDays.filter(d => d !== dayIndex));
-                else setSelectedDays([...selectedDays, dayIndex]);
-            };
-
+            const toggleDay = (dayIndex) => { if (selectedDays.includes(dayIndex)) setSelectedDays(selectedDays.filter(d => d !== dayIndex)); else setSelectedDays([...selectedDays, dayIndex]); };
             React.useEffect(() => {
                 const weekId = getWeekId(curr);
                 const qExtras = query(collection(db, "shopping_extras"), where("weekId", "==", weekId));
                 const unsub = onSnapshot(qExtras, (s) => { setExtras(s.docs.map(d => ({ id: d.id, ...d.data() }))); });
                 return () => unsub();
             }, [curr]);
-
             React.useEffect(() => {
                 const weekId = getWeekId(curr);
                 onSnapshot(doc(db,"plans",weekId), s => {
@@ -860,49 +777,19 @@
                             const daySlots = planData[dayIndex];
                             if (daySlots) {
                                 Object.values(daySlots).forEach(slotData => {
-                                    let items = [];
-                                    if (slotData.items) {
-                                        items = [...slotData.items];
-                                        if (slotData.side) items.push(slotData.side);
-                                    } else if (slotData.id) {
-                                        items = [slotData];
-                                    }
-
+                                    let items = []; if (slotData.items) { items = [...slotData.items]; if (slotData.side) items.push(slotData.side); } else if (slotData.id) { items = [slotData]; }
                                     items.forEach(planRecipe => {
                                         if(!planRecipe) return; 
                                         const freshRecipe = recipes.find(r => r.id === planRecipe.id) || planRecipe;
                                         const portions = planRecipe.portions || 'both';
-
                                         if(freshRecipe.ingredients) {
                                             freshRecipe.ingredients.forEach(i => {
-                                                let name = i.name.trim();
-                                                let rawUnit = (i.unit || '').toLowerCase().trim();
-                                                
-                                                let qty = 0;
-                                                if (portions === 'Martina') qty = parseFloat(i.qtyM || 0);
-                                                else if (portions === 'Carmen') qty = parseFloat(i.qtyC || 0);
-                                                else qty = (parseFloat(i.qtyM || 0) + parseFloat(i.qtyC || 0));
-
-                                                // --- LOGICA "SENZA QUANTITÀ" ---
-                                                // Se l'unità è q.b. OPPURE la quantità è zero/null
+                                                let name = i.name.trim(); let rawUnit = (i.unit || '').toLowerCase().trim(); let qty = 0;
+                                                if (portions === 'Martina') qty = parseFloat(i.qtyM || 0); else if (portions === 'Carmen') qty = parseFloat(i.qtyC || 0); else qty = (parseFloat(i.qtyM || 0) + parseFloat(i.qtyC || 0));
                                                 let finalUnit = rawUnit;
-                                                if (rawUnit === 'q.b.' || rawUnit === 'qb' || qty <= 0 || isNaN(qty)) {
-                                                    finalUnit = ''; // Rimuovi unità per visualizzazione pulita
-                                                    qty = 0;
-                                                } else {
-                                                    // Normalizzazioni standard solo se c'è quantità
-                                                    if (!finalUnit) finalUnit = 'pz';
-                                                    if (name.toLowerCase().includes('pane') && ['fetta', 'fette', 'pz', 'pezzi'].includes(finalUnit)) { finalUnit = 'gr'; if(qty < 10) qty = qty * 30; }
-                                                    if (finalUnit === 'fetta' || finalUnit === 'fette') finalUnit = 'pz';
-                                                    if (finalUnit === 'g') finalUnit = 'gr';
-                                                }
-
-                                                const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                                                const safeUnit = finalUnit.replace(/[^a-z0-9]/g, '');
-                                                const k = `${safeName}_${safeUnit}`;
-                                                
-                                                if(!agg[k]) agg[k] = { name: name, q: 0, u: finalUnit, id: k };
-                                                agg[k].q += qty;
+                                                if (rawUnit === 'q.b.' || rawUnit === 'qb' || qty <= 0 || isNaN(qty)) { finalUnit = ''; qty = 0; } else { if (!finalUnit) finalUnit = 'pz'; if (name.toLowerCase().includes('pane') && ['fetta', 'fette', 'pz', 'pezzi'].includes(finalUnit)) { finalUnit = 'gr'; if(qty < 10) qty = qty * 30; } if (finalUnit === 'fetta' || finalUnit === 'fette') finalUnit = 'pz'; if (finalUnit === 'g') finalUnit = 'gr'; }
+                                                const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''); const safeUnit = finalUnit.replace(/[^a-z0-9]/g, ''); const k = `${safeName}_${safeUnit}`;
+                                                if(!agg[k]) agg[k] = { name: name, q: 0, u: finalUnit, id: k }; agg[k].q += qty;
                                             });
                                         }
                                     });
@@ -910,139 +797,41 @@
                             }
                         });
                     }
-
                     extras.forEach(e => {
-                         let name = e.name.trim();
-                         let rawUnit = (e.unit || '').toLowerCase().trim();
-                         let qty = parseFloat(e.qty || 0);
-                         
-                         let finalUnit = rawUnit;
-                         // FIX: Allow negative quantities to merge correctly.
-                         // Only treat as unitless checklist item if unit is q.b. or explicitly 0.
-                         if (rawUnit === 'q.b.' || rawUnit === 'qb') {
-                            finalUnit = '';
-                            qty = 0;
-                         } else if (qty === 0 || isNaN(qty)) {
-                             finalUnit = '';
-                             qty = 0;
-                         } else {
-                             // Apply normalizations to match recipe keys
-                             if (!finalUnit) finalUnit = 'pz';
-                             if (finalUnit === 'g') finalUnit = 'gr';
-                         }
-
-                         const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                         const safeUnit = finalUnit.replace(/[^a-z0-9]/g, '');
-                         const k = `${safeName}_${safeUnit}`;
-                         
-                         if(!agg[k]) agg[k] = { name: name, q: 0, u: finalUnit, id: k };
-                         agg[k].q += qty;
+                         let name = e.name.trim(); let rawUnit = (e.unit || '').toLowerCase().trim(); let qty = parseFloat(e.qty || 0); let finalUnit = rawUnit;
+                         if (rawUnit === 'q.b.' || rawUnit === 'qb') { finalUnit = ''; qty = 0; } else if (qty === 0 || isNaN(qty)) { finalUnit = ''; qty = 0; } else { if (!finalUnit) finalUnit = 'pz'; if (finalUnit === 'g') finalUnit = 'gr'; }
+                         const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''); const safeUnit = finalUnit.replace(/[^a-z0-9]/g, ''); const k = `${safeName}_${safeUnit}`;
+                         if(!agg[k]) agg[k] = { name: name, q: 0, u: finalUnit, id: k }; agg[k].q += qty;
                     });
-
-                    // FIX: Filter out items with quantity <= 0 UNLESS they are explicitly unitless checklist items
-                    const filteredList = Object.values(agg).filter(i => {
-                        if (i.u === '') return true; // Always show checklist items
-                        return i.q > 0; // Show measured items only if positive result
-                    });
-
+                    const filteredList = Object.values(agg).filter(i => { if (i.u === '') return true; return i.q > 0; });
                     setList(filteredList.sort((a,b)=>a.name.localeCompare(b.name)));
                 });
             }, [curr, selectedDays, recipes, extras]);
-
-            // Checked Items
-            React.useEffect(() => {
-                const weekId = getWeekId(curr);
-                const unsub = onSnapshot(doc(db, "shopping", weekId), (s) => {
-                    if(s.exists()) setChecked(s.data()); else setChecked({});
-                });
-                return () => unsub();
-            }, [curr]);
-
-            const handleCheck = async (id, currentVal) => {
-                const weekId = getWeekId(curr);
-                await setDoc(doc(db, "shopping", weekId), { [id]: !currentVal }, { merge: true });
-            };
-
-            const handleAddExtra = async () => {
-                if (!newExtName) return;
-                const weekId = getWeekId(curr);
-                await addDoc(collection(db, "shopping_extras"), { weekId, name: newExtName, qty: parseFloat(newExtQty || 0), unit: newExtUnit, createdAt: new Date().toISOString() });
-                setNewExtName(''); setNewExtQty('');
-            };
-            
+            React.useEffect(() => { const weekId = getWeekId(curr); const unsub = onSnapshot(doc(db, "shopping", weekId), (s) => { if(s.exists()) setChecked(s.data()); else setChecked({}); }); return () => unsub(); }, [curr]);
+            const handleCheck = async (id, currentVal) => { const weekId = getWeekId(curr); await setDoc(doc(db, "shopping", weekId), { [id]: !currentVal }, { merge: true }); };
+            const handleAddExtra = async () => { if (!newExtName) return; const weekId = getWeekId(curr); await addDoc(collection(db, "shopping_extras"), { weekId, name: newExtName, qty: parseFloat(newExtQty || 0), unit: newExtUnit, createdAt: new Date().toISOString() }); setNewExtName(''); setNewExtQty(''); };
             const handleDeleteExtra = async (id) => { await deleteDoc(doc(db, "shopping_extras", id)); };
-
             React.useEffect(() => { loadIcons(); }, [list, isAddModalOpen]);
             const days = ["L", "M", "M", "G", "V", "S", "D"];
-
             return (
                 <div className="h-full flex flex-col animate-fade-in">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-display font-extrabold text-2xl text-slate-900">Lista Spesa</h2>
-                         <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm">
-                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()-7);setCurr(d)}} aria-label="Settimana precedente"><i data-lucide="chevron-left" className="w-4 h-4 text-slate-400"></i></button>
-                            <span className="text-xs font-bold text-slate-600">{getWeekRangeString(curr)}</span>
-                            <button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()+7);setCurr(d)}} aria-label="Settimana successiva"><i data-lucide="chevron-right" className="w-4 h-4 text-slate-400"></i></button>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between mb-4 px-1" role="group" aria-label="Filtro giorni">
-                        {days.map((d, idx) => (
-                            <button key={idx} onClick={() => toggleDay(idx)} aria-pressed={selectedDays.includes(idx)} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-sm ${selectedDays.includes(idx) ? 'bg-brand-500 text-white scale-110 shadow-md' : 'bg-white text-slate-400'}`}>{d}</button>
-                        ))}
-                    </div>
-                    
+                    <div className="flex justify-between items-center mb-4"><h2 className="font-display font-extrabold text-2xl text-slate-900">Lista Spesa</h2><div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm"><button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()-7);setCurr(d)}} aria-label="Settimana precedente"><i data-lucide="chevron-left" className="w-4 h-4 text-slate-400"></i></button><span className="text-xs font-bold text-slate-600">{getWeekRangeString(curr)}</span><button onClick={()=>{const d=new Date(curr);d.setDate(d.getDate()+7);setCurr(d)}} aria-label="Settimana successiva"><i data-lucide="chevron-right" className="w-4 h-4 text-slate-400"></i></button></div></div>
+                    <div className="flex justify-between mb-4 px-1" role="group" aria-label="Filtro giorni">{days.map((d, idx) => <button key={idx} onClick={() => toggleDay(idx)} aria-pressed={selectedDays.includes(idx)} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-sm ${selectedDays.includes(idx) ? 'bg-brand-500 text-white scale-110 shadow-md' : 'bg-white text-slate-400'}`}>{d}</button>)}</div>
                     <div className="bg-white rounded-[32px] shadow-soft flex-1 overflow-hidden flex flex-col relative">
-                        <div className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">
-                            {list.length===0 ? <div className="text-center text-slate-300 mt-20"><i data-lucide="shopping-cart" className="w-16 h-16 mx-auto mb-4 opacity-20"></i><p>Niente da comprare</p></div> : 
-                            list.map((i) => (
-                                <label key={i.id} className="flex items-center p-4 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors group">
-                                    <input type="checkbox" className="w-6 h-6 rounded-lg border-slate-300 text-brand-600 focus:ring-brand-500 mr-4 accent-brand-500" checked={!!checked[i.id]} onChange={() => handleCheck(i.id, !!checked[i.id])} />
-                                    <span className={`flex-1 font-medium transition-all ${checked[i.id] ? 'text-slate-400 line-through decoration-2 decoration-slate-300' : 'text-slate-700 group-hover:text-slate-900'}`}>{i.name}</span>
-                                    {i.u && (
-                                        <span className={`font-bold px-3 py-1 rounded-lg text-sm transition-all ${checked[i.id] ? 'bg-slate-100 text-slate-400' : 'bg-brand-50 text-brand-600'}`}>{Math.round(i.q)} {i.u}</span>
-                                    )}
-                                </label>
-                            ))}
-                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">{list.length===0 ? <div className="text-center text-slate-300 mt-20"><i data-lucide="shopping-cart" className="w-16 h-16 mx-auto mb-4 opacity-20"></i><p>Niente da comprare</p></div> : list.map((i) => <label key={i.id} className="flex items-center p-4 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors group"><input type="checkbox" className="w-6 h-6 rounded-lg border-slate-300 text-brand-600 focus:ring-brand-500 mr-4 accent-brand-500" checked={!!checked[i.id]} onChange={() => handleCheck(i.id, !!checked[i.id])} /><span className={`flex-1 font-medium transition-all ${checked[i.id] ? 'text-slate-400 line-through decoration-2 decoration-slate-300' : 'text-slate-700 group-hover:text-slate-900'}`}>{i.name}</span>{i.u && <span className={`font-bold px-3 py-1 rounded-lg text-sm transition-all ${checked[i.id] ? 'bg-slate-100 text-slate-400' : 'bg-brand-50 text-brand-600'}`}>{Math.round(i.q)} {i.u}</span>}</label>)}</div>
                         <button onClick={() => setIsAddModalOpen(true)} aria-label="Aggiungi prodotto extra" className="absolute bottom-6 right-6 bg-brand-500 hover:bg-brand-600 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90 z-10"><i data-lucide="plus" className="w-6 h-6"></i></button>
                     </div>
-
                     {isAddModalOpen && (
                         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
                              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} aria-label="Chiudi"></div>
                              <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-24">
-                                 <div className="flex justify-between items-center mb-6">
-                                     <h3 className="font-display font-bold text-xl text-slate-800">Aggiungi Prodotto</h3>
-                                     <button onClick={() => setIsAddModalOpen(false)} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button>
-                                 </div>
+                                 <div className="flex justify-between items-center mb-6"><h3 className="font-display font-bold text-xl text-slate-800">Aggiungi Prodotto</h3><button onClick={() => setIsAddModalOpen(false)} aria-label="Chiudi" className="p-2 bg-slate-100 rounded-full"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button></div>
                                  <div className="space-y-4 mb-6">
                                      <div><label htmlFor="new-product-name" className="block text-xs font-bold text-slate-400 uppercase mb-1">Nome Prodotto</label><input id="new-product-name" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="Es. Latte, Mele..." value={newExtName} onChange={e => setNewExtName(e.target.value)} /></div>
-                                     <div className="flex gap-3">
-                                         <div className="flex-1"><label htmlFor="new-product-qty" className="block text-xs font-bold text-slate-400 uppercase mb-1">Quantità</label><input id="new-product-qty" type="number" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="0" value={newExtQty} onChange={e => setNewExtQty(e.target.value)} /></div>
-                                         <div className="w-1/3">
-                                             <label htmlFor="new-product-unit" className="block text-xs font-bold text-slate-400 uppercase mb-1">Unità</label>
-                                             <select id="new-product-unit" className="w-full p-3 bg-slate-50 rounded-xl border-none" value={newExtUnit} onChange={e => setNewExtUnit(e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select>
-                                         </div>
-                                     </div>
+                                     <div className="flex gap-3"><div className="flex-1"><label htmlFor="new-product-qty" className="block text-xs font-bold text-slate-400 uppercase mb-1">Quantità</label><input id="new-product-qty" type="number" className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" placeholder="0" value={newExtQty} onChange={e => setNewExtQty(e.target.value)} /></div><div className="w-1/3"><label htmlFor="new-product-unit" className="block text-xs font-bold text-slate-400 uppercase mb-1">Unità</label><select id="new-product-unit" className="w-full p-3 bg-slate-50 rounded-xl border-none" value={newExtUnit} onChange={e => setNewExtUnit(e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select></div></div>
                                      <button onClick={handleAddExtra} className="w-full py-3 bg-brand-600 text-white font-bold rounded-xl shadow-md active:scale-95 transition-transform">Aggiungi alla Lista</button>
                                  </div>
-                                 {extras.length > 0 && (
-                                     <div className="border-t border-slate-100 pt-4">
-                                         <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Prodotti aggiunti manualmente</h4>
-                                         <div className="max-h-40 overflow-y-auto space-y-2">
-                                             {extras.map(e => (
-                                                 <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-sm">
-                                                     <span className="font-medium text-slate-700">{e.name}</span>
-                                                     <div className="flex items-center gap-1">
-                                                         <span className="text-slate-500 text-xs">{e.qty} {e.unit}</span>
-                                                         <button onClick={() => handleDeleteExtra(e.id)} aria-label={`Rimuovi ${e.name}`} className="text-red-400 hover:text-red-600 p-3 rounded-full hover:bg-red-50 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                                     </div>
-                                                 </div>
-                                             ))}
-                                         </div>
-                                     </div>
-                                 )}
+                                 {extras.length > 0 && (<div className="border-t border-slate-100 pt-4"><h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Prodotti aggiunti manualmente</h4><div className="max-h-40 overflow-y-auto space-y-2">{extras.map(e => <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-sm"><span className="font-medium text-slate-700">{e.name}</span><div className="flex items-center gap-1"><span className="text-slate-500 text-xs">{e.qty} {e.unit}</span><button onClick={() => handleDeleteExtra(e.id)} aria-label={`Rimuovi ${e.name}`} className="text-red-400 hover:text-red-600 p-3 rounded-full hover:bg-red-50 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button></div></div>)}</div></div>)}
                              </div>
                         </div>
                     )}
@@ -1050,80 +839,39 @@
             );
         };
 
-        // --- ADD RECIPE (Unchanged) ---
+        // --- 7. AddRecipe ---
         const AddRecipe = ({ onSave, editData }) => {
             const [form, setForm] = React.useState({ title:'', category:'Colazione', time:'media', procedure:'' });
             const [ings, setIngs] = React.useState([{name:'', qtyM:'', qtyC:'', unit:'gr'}]);
             const [selectedEmoji, setSelectedEmoji] = React.useState(null);
             const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
-
             React.useEffect(() => { loadIcons(); }, [ings]);
-
             React.useEffect(() => {
                 if (editData) {
                     setForm({ title: editData.title || '', category: editData.category || 'Colazione', time: editData.time || 'media', procedure: editData.procedure || '' });
-                    setIngs(editData.ingredients || []);
-                    setSelectedEmoji(editData.emoji || null);
-                } else {
-                    setForm({ title:'', category:'Colazione', time:'media', procedure:'' });
-                    setIngs([{name:'', qtyM:'', qtyC:'', unit:'gr'}]);
-                    setSelectedEmoji(null);
-                }
+                    setIngs(editData.ingredients || []); setSelectedEmoji(editData.emoji || null);
+                } else { setForm({ title:'', category:'Colazione', time:'media', procedure:'' }); setIngs([{name:'', qtyM:'', qtyC:'', unit:'gr'}]); setSelectedEmoji(null); }
             }, [editData]);
-
-            React.useLayoutEffect(() => {
-                const scrollContainer = document.getElementById('main-scroll-container');
-                if (scrollContainer) scrollContainer.scrollTop = 0;
-            }, []);
-
+            React.useLayoutEffect(() => { const scrollContainer = document.getElementById('main-scroll-container'); if (scrollContainer) scrollContainer.scrollTop = 0; }, []);
             const handleSave = async () => {
                 if(!form.title) return alert("Manca il titolo!");
                 const recipeData = { ...form, ingredients: ings, emoji: selectedEmoji, createdAt: new Date().toISOString() };
-                if (editData && editData.id) await setDoc(doc(db, "recipes", editData.id), recipeData, { merge: true });
-                else await addDoc(collection(db, "recipes"), recipeData);
-                onSave();
+                if (editData && editData.id) await setDoc(doc(db, "recipes", editData.id), recipeData, { merge: true }); else await addDoc(collection(db, "recipes"), recipeData); onSave();
             };
-
             const updateIng = (i,f,v) => { const n = [...ings]; n[i][f]=v; setIngs(n); };
             const displayEmoji = selectedEmoji || getCategoryEmoji(form.category);
-
             return (
                 <div className="space-y-6 animate-fade-in">
                     <h2 className="font-display font-extrabold text-2xl text-slate-900">{editData ? 'Modifica Ricetta' : 'Nuova Ricetta'}</h2>
                     <div className="bg-white p-6 rounded-3xl shadow-soft space-y-4">
-                         <div className="flex justify-center mb-4">
-                            <button onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)} aria-label="Scegli emoji" className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center text-6xl shadow-inner hover:bg-brand-100 transition-colors relative">
-                                {displayEmoji}
-                                <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md"><i data-lucide="pencil" className="w-4 h-4 text-slate-500"></i></div>
-                            </button>
-                        </div>
-                        {isEmojiPickerOpen && (
-                            <div className="bg-slate-50 p-4 rounded-2xl grid grid-cols-8 gap-2 animate-fade-in mb-4">
-                                {FOOD_EMOJIS.map(emoji => (
-                                    <button key={emoji} onClick={() => { setSelectedEmoji(emoji); setIsEmojiPickerOpen(false); }} className="text-2xl p-2 hover:bg-white rounded-lg transition-colors">{emoji}</button>
-                                ))}
-                            </div>
-                        )}
+                         <div className="flex justify-center mb-4"><button onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)} aria-label="Scegli emoji" className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center text-6xl shadow-inner hover:bg-brand-100 transition-colors relative">{displayEmoji}<div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md"><i data-lucide="pencil" className="w-4 h-4 text-slate-500"></i></div></button></div>
+                        {isEmojiPickerOpen && (<div className="bg-slate-50 p-4 rounded-2xl grid grid-cols-8 gap-2 animate-fade-in mb-4">{FOOD_EMOJIS.map(emoji => <button key={emoji} onClick={() => { setSelectedEmoji(emoji); setIsEmojiPickerOpen(false); }} className="text-2xl p-2 hover:bg-white rounded-lg transition-colors">{emoji}</button>)}</div>)}
                         <div><label htmlFor="recipe-title" className="block text-xs font-bold text-slate-400 uppercase mb-2">Titolo</label><input id="recipe-title" className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-500 font-display font-bold text-lg" placeholder="Es. Pasta al Pesto" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} /></div>
-                        <div className="grid grid-cols-2 gap-4">
-                             <div><label htmlFor="recipe-category" className="block text-xs font-bold text-slate-400 uppercase mb-2">Categoria</label><select id="recipe-category" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.category} onChange={e=>setForm({...form, category:e.target.value})}><option>Colazione</option><option>Pranzo</option><option>Cena</option><option>Spuntino</option><option>Contorno</option></select></div>
-                             <div><label htmlFor="recipe-time" className="block text-xs font-bold text-slate-400 uppercase mb-2">Tempo</label><select id="recipe-time" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.time} onChange={e=>setForm({...form, time:e.target.value})}><option value="breve">Breve</option><option value="media">Media</option><option value="lunga">Lunga</option></select></div>
-                        </div>
+                        <div className="grid grid-cols-2 gap-4"><div><label htmlFor="recipe-category" className="block text-xs font-bold text-slate-400 uppercase mb-2">Categoria</label><select id="recipe-category" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.category} onChange={e=>setForm({...form, category:e.target.value})}><option>Colazione</option><option>Pranzo</option><option>Cena</option><option>Spuntino</option><option>Contorno</option></select></div><div><label htmlFor="recipe-time" className="block text-xs font-bold text-slate-400 uppercase mb-2">Tempo</label><select id="recipe-time" className="w-full p-3 bg-slate-50 rounded-2xl border-none" value={form.time} onChange={e=>setForm({...form, time:e.target.value})}><option value="breve">Breve</option><option value="media">Media</option><option value="lunga">Lunga</option></select></div></div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl shadow-soft">
                         <div className="flex justify-between items-center mb-4"><h3 className="font-display font-bold text-lg">Ingredienti</h3><button onClick={()=>setIngs([...ings,{name:'',qtyM:'',qtyC:'',unit:'gr'}])} aria-label="Aggiungi ingrediente" className="text-brand-600 bg-brand-50 p-2 rounded-full"><i data-lucide="plus" className="w-5 h-5"></i></button></div>
-                        <div className="space-y-4">
-                            {ings.map((ing, i) => (
-                                <div key={i} className="p-3 border border-slate-100 rounded-2xl">
-                                    <input className="w-full mb-2 p-2 font-medium bg-transparent border-b border-slate-200 focus:border-brand-500 outline-none" placeholder="Nome ingrediente" aria-label={`Nome ingrediente ${i+1}`} value={ing.name} onChange={e=>updateIng(i,'name',e.target.value)} />
-                                    <div className="flex gap-2 items-center text-sm">
-                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">M</span><input type="number" aria-label={`Quantità Martina per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyM} onChange={e=>updateIng(i,'qtyM',e.target.value)} /></div>
-                                        <div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">C</span><input type="number" aria-label={`Quantità Carmen per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyC} onChange={e=>updateIng(i,'qtyC',e.target.value)} /></div>
-                                        <div className="flex-1 bg-slate-50 rounded-lg px-1 py-1"><select aria-label={`Unità per ${ing.name}`} className="w-full bg-transparent text-xs font-bold text-slate-600 border-none outline-none py-1" value={ing.unit} onChange={e=>updateIng(i,'unit',e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <div className="space-y-4">{ings.map((ing, i) => (<div key={i} className="p-3 border border-slate-100 rounded-2xl"><input className="w-full mb-2 p-2 font-medium bg-transparent border-b border-slate-200 focus:border-brand-500 outline-none" placeholder="Nome ingrediente" aria-label={`Nome ingrediente ${i+1}`} value={ing.name} onChange={e=>updateIng(i,'name',e.target.value)} /><div className="flex gap-2 items-center text-sm"><div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">M</span><input type="number" aria-label={`Quantità Martina per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyM} onChange={e=>updateIng(i,'qtyM',e.target.value)} /></div><div className="w-20 bg-slate-50 rounded-lg px-2 py-1 flex items-center"><span className="text-xs text-slate-400 mr-2">C</span><input type="number" aria-label={`Quantità Carmen per ${ing.name}`} className="w-full bg-transparent outline-none" placeholder="0" value={ing.qtyC} onChange={e=>updateIng(i,'qtyC',e.target.value)} /></div><div className="flex-1 bg-slate-50 rounded-lg px-1 py-1"><select aria-label={`Unità per ${ing.name}`} className="w-full bg-transparent text-xs font-bold text-slate-600 border-none outline-none py-1" value={ing.unit} onChange={e=>updateIng(i,'unit',e.target.value)}><option value="gr">gr</option><option value="ml">ml</option><option value="pz">pz</option><option value="cucchiai">cucchiai</option><option value="q.b.">q.b.</option></select></div></div></div>))}</div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl shadow-soft"><h3 className="font-display font-bold text-lg mb-4">Procedimento</h3><textarea className="w-full p-4 bg-slate-50 rounded-2xl border-none min-h-[120px]" placeholder="Descrivi i passaggi..." value={form.procedure} onChange={e=>setForm({...form, procedure:e.target.value})} aria-label="Procedimento ricetta"></textarea></div>
                     <button onClick={handleSave} className="w-full py-4 bg-brand-600 text-white font-display font-bold text-lg rounded-2xl shadow-glow active:scale-95 transition-transform">{editData ? 'Salva Modifiche' : 'Aggiungi Ricetta'}</button>
@@ -1131,124 +879,29 @@
             );
         };
 
-        // --- NUTRITIONIST PARENT COMPONENT (DYNAMIC SLOTS) ---
+        // --- 8. Nutritionist ---
         const Nutritionist = () => {
             const [p, setP] = React.useState('Martina');
             const [d, setD] = React.useState({ Martina:{}, Carmen:{} });
             const [isEditing, setIsEditing] = React.useState(false);
             const [newSlotName, setNewSlotName] = React.useState("");
-
-            React.useEffect(() => { 
-                const unsub = onSnapshot(doc(db,"nutrition","plan"), s => {
-                    if(s.exists()) setD(s.data());
-                });
-                return () => unsub();
-            }, []);
-            
-            const defaultSlots = p==='Martina' 
-                ? ['Colazione','Spuntino 1','Pranzo','Spuntino 2','Cena'] 
-                : ['Colazione','Spuntino','Pranzo','Cena'];
-                
+            React.useEffect(() => { const unsub = onSnapshot(doc(db,"nutrition","plan"), s => { if(s.exists()) setD(s.data()); }); return () => unsub(); }, []);
+            const defaultSlots = p==='Martina' ? ['Colazione','Spuntino 1','Pranzo','Spuntino 2','Cena'] : ['Colazione','Spuntino','Pranzo','Cena'];
             const currentSlots = d[p]?._slots || defaultSlots;
-
             React.useEffect(() => { loadIcons(); }, [isEditing, currentSlots]);
-
-            const handleUpdateValue = async (slot, val) => {
-                const currentData = d[p] || {};
-                const safeSlots = currentData._slots || defaultSlots;
-                const n = {
-                    ...d,
-                    [p]: { ...currentData, _slots: safeSlots, [slot]: val }
-                };
-                await setDoc(doc(db,"nutrition","plan"), n, {merge:true});
-            };
-
-            const addSlot = async () => {
-                if(!newSlotName.trim()) return;
-                const currentData = d[p] || {};
-                const safeSlots = currentData._slots || defaultSlots;
-                if(safeSlots.includes(newSlotName)) return alert("Esiste già!");
-                
-                const updatedSlots = [...safeSlots, newSlotName.trim()];
-                const n = { ...d, [p]: { ...currentData, _slots: updatedSlots } };
-                await setDoc(doc(db,"nutrition","plan"), n, {merge:true});
-                setNewSlotName("");
-            };
-
-            const removeSlot = async (slotToRemove) => {
-                if(!confirm(`Eliminare ${slotToRemove}?`)) return;
-                const currentData = d[p] || {};
-                const safeSlots = currentData._slots || defaultSlots;
-                const updatedSlots = safeSlots.filter(s => s !== slotToRemove);
-                
-                const n = { ...d, [p]: { ...currentData, _slots: updatedSlots } };
-                await setDoc(doc(db,"nutrition","plan"), n, {merge:true});
-            };
-
-            const moveSlot = async (index, direction) => {
-                const currentData = d[p] || {};
-                const safeSlots = [...(currentData._slots || defaultSlots)];
-                
-                if (direction === -1 && index > 0) {
-                    [safeSlots[index], safeSlots[index-1]] = [safeSlots[index-1], safeSlots[index]];
-                } else if (direction === 1 && index < safeSlots.length - 1) {
-                    [safeSlots[index], safeSlots[index+1]] = [safeSlots[index+1], safeSlots[index]];
-                } else {
-                    return;
-                }
-
-                const n = { ...d, [p]: { ...currentData, _slots: safeSlots } };
-                await setDoc(doc(db,"nutrition","plan"), n, {merge:true});
-            };
-
+            const handleUpdateValue = async (slot, val) => { const currentData = d[p] || {}; const safeSlots = currentData._slots || defaultSlots; const n = { ...d, [p]: { ...currentData, _slots: safeSlots, [slot]: val } }; await setDoc(doc(db,"nutrition","plan"), n, {merge:true}); };
+            const addSlot = async () => { if(!newSlotName.trim()) return; const currentData = d[p] || {}; const safeSlots = currentData._slots || defaultSlots; if(safeSlots.includes(newSlotName)) return alert("Esiste già!"); const updatedSlots = [...safeSlots, newSlotName.trim()]; const n = { ...d, [p]: { ...currentData, _slots: updatedSlots } }; await setDoc(doc(db,"nutrition","plan"), n, {merge:true}); setNewSlotName(""); };
+            const removeSlot = async (slotToRemove) => { if(!confirm(`Eliminare ${slotToRemove}?`)) return; const currentData = d[p] || {}; const safeSlots = currentData._slots || defaultSlots; const updatedSlots = safeSlots.filter(s => s !== slotToRemove); const n = { ...d, [p]: { ...currentData, _slots: updatedSlots } }; await setDoc(doc(db,"nutrition","plan"), n, {merge:true}); };
+            const moveSlot = async (index, direction) => { const currentData = d[p] || {}; const safeSlots = [...(currentData._slots || defaultSlots)]; if (direction === -1 && index > 0) { [safeSlots[index], safeSlots[index-1]] = [safeSlots[index-1], safeSlots[index]]; } else if (direction === 1 && index < safeSlots.length - 1) { [safeSlots[index], safeSlots[index+1]] = [safeSlots[index+1], safeSlots[index]]; } else { return; } const n = { ...d, [p]: { ...currentData, _slots: safeSlots } }; await setDoc(doc(db,"nutrition","plan"), n, {merge:true}); };
             return (
                 <div className="animate-fade-in space-y-4 pb-20">
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="flex-1 flex bg-white p-1.5 rounded-2xl shadow-soft" role="group" aria-label="Seleziona persona">
-                            {['Martina','Carmen'].map(n => (
-                                <button key={n} onClick={()=>setP(n)} aria-pressed={p===n} className={`flex-1 py-3 rounded-xl font-bold font-display transition-all ${p===n ? 'bg-brand-500 text-white shadow-md' : 'text-slate-400'}`}>{n}</button>
-                            ))}
-                        </div>
-                        <button onClick={() => setIsEditing(!isEditing)} aria-label={isEditing ? "Chiudi gestione" : "Gestisci pasti"} className={`p-4 rounded-2xl shadow-soft transition-colors ${isEditing ? 'bg-slate-800 text-white' : 'bg-white text-slate-400'}`}><i data-lucide={isEditing ? "check" : "settings-2"} className="w-5 h-5"></i></button>
-                    </div>
-
-                    {isEditing ? (
-                        <div className="bg-white p-6 rounded-3xl shadow-soft animate-fade-in">
-                            <h3 className="font-display font-bold text-lg mb-4 text-slate-800">Gestisci Pasti per {p}</h3>
-                            <div className="flex gap-2 mb-6">
-                                <input className="flex-1 p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-sm font-bold" placeholder="Nuovo pasto (es. Spuntino 3)" value={newSlotName} onChange={(e) => setNewSlotName(e.target.value)} aria-label="Nome nuovo pasto" />
-                                <button onClick={addSlot} aria-label="Aggiungi pasto" className="bg-brand-500 text-white p-3 rounded-xl shadow-md active:scale-95"><i data-lucide="plus" className="w-5 h-5"></i></button>
-                            </div>
-                            <div className="space-y-2">
-                                {currentSlots.map((s, idx) => (
-                                    <div key={s} className="flex justify-between items-center p-3 border border-slate-100 rounded-xl bg-slate-50">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex flex-col gap-1 mr-2">
-                                                <button onClick={() => moveSlot(idx, -1)} aria-label={`Sposta su ${s}`} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-up" className="w-5 h-5"></i></button>
-                                                <button onClick={() => moveSlot(idx, 1)} aria-label={`Sposta giù ${s}`} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-down" className="w-5 h-5"></i></button>
-                                            </div>
-                                            <span className="font-bold text-slate-700">{s}</span>
-                                        </div>
-                                        <button onClick={() => removeSlot(s)} aria-label={`Rimuovi ${s}`} className="text-red-400 hover:text-red-600 p-3 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="text-center text-xs text-slate-300 mt-6">Le modifiche sono salvate automaticamente.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {currentSlots.length === 0 ? <div className="text-center text-slate-400 py-10">Nessun pasto configurato.</div> : 
-                                currentSlots.map(s => (
-                                    <NutritionSlot key={`${p}-${s}`} label={s} value={d[p]?.[s]} onSave={(val) => handleUpdateValue(s, val)} />
-                                ))
-                            }
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 mb-6"><div className="flex-1 flex bg-white p-1.5 rounded-2xl shadow-soft" role="group" aria-label="Seleziona persona">{['Martina','Carmen'].map(n => <button key={n} onClick={()=>setP(n)} aria-pressed={p===n} className={`flex-1 py-3 rounded-xl font-bold font-display transition-all ${p===n ? 'bg-brand-500 text-white shadow-md' : 'text-slate-400'}`}>{n}</button>)}</div><button onClick={() => setIsEditing(!isEditing)} aria-label={isEditing ? "Chiudi gestione" : "Gestisci pasti"} className={`p-4 rounded-2xl shadow-soft transition-colors ${isEditing ? 'bg-slate-800 text-white' : 'bg-white text-slate-400'}`}><i data-lucide={isEditing ? "check" : "settings-2"} className="w-5 h-5"></i></button></div>
+                    {isEditing ? (<div className="bg-white p-6 rounded-3xl shadow-soft animate-fade-in"><h3 className="font-display font-bold text-lg mb-4 text-slate-800">Gestisci Pasti per {p}</h3><div className="flex gap-2 mb-6"><input className="flex-1 p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-sm font-bold" placeholder="Nuovo pasto (es. Spuntino 3)" value={newSlotName} onChange={(e) => setNewSlotName(e.target.value)} aria-label="Nome nuovo pasto" /><button onClick={addSlot} aria-label="Aggiungi pasto" className="bg-brand-500 text-white p-3 rounded-xl shadow-md active:scale-95"><i data-lucide="plus" className="w-5 h-5"></i></button></div><div className="space-y-2">{currentSlots.map((s, idx) => <div key={s} className="flex justify-between items-center p-3 border border-slate-100 rounded-xl bg-slate-50"><div className="flex items-center gap-2"><div className="flex flex-col gap-1 mr-2"><button onClick={() => moveSlot(idx, -1)} aria-label={`Sposta su ${s}`} disabled={idx === 0} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-up" className="w-5 h-5"></i></button><button onClick={() => moveSlot(idx, 1)} aria-label={`Sposta giù ${s}`} disabled={idx === currentSlots.length - 1} className="text-slate-400 hover:text-brand-500 disabled:opacity-30 p-3"><i data-lucide="chevron-down" className="w-5 h-5"></i></button></div><span className="font-bold text-slate-700">{s}</span></div><button onClick={() => removeSlot(s)} aria-label={`Rimuovi ${s}`} className="text-red-400 hover:text-red-600 p-3 bg-white rounded-lg shadow-sm"><i data-lucide="trash-2" className="w-5 h-5"></i></button></div>)}</div><p className="text-center text-xs text-slate-300 mt-6">Le modifiche sono salvate automaticamente.</p></div>) : (<div className="space-y-4">{currentSlots.length === 0 ? <div className="text-center text-slate-400 py-10">Nessun pasto configurato.</div> : currentSlots.map(s => <NutritionSlot key={`${p}-${s}`} label={s} value={d[p]?.[s]} onSave={(val) => handleUpdateValue(s, val)} />)}</div>)}
                 </div>
             );
         };
 
-        // --- MAIN APP ---
+        // --- 9. App (LIFTED STATE for RecipeBook) ---
         const App = () => {
             const [user, setUser] = React.useState(null);
             const [activeTab, setActiveTab] = React.useState('planner');
@@ -1256,24 +909,21 @@
             const [recipeToEdit, setRecipeToEdit] = React.useState(null); 
             const [shoppingSelectedDays, setShoppingSelectedDays] = React.useState([0,1,2,3,4,5,6]); 
             const [allRecipes, setAllRecipes] = React.useState([]);
-            
-            // --- STATE LIFTING FOR PERSISTENCE ---
             const [plannerDate, setPlannerDate] = React.useState(new Date());
-            const [plannerDay, setPlannerDay] = React.useState(0); // 0 = Lunedì
+            const [plannerDay, setPlannerDay] = React.useState((new Date().getDay() + 6) % 7);
+            const [recipeFilter, setRecipeFilter] = React.useState('Tutte');
+            const [recipeFilterTime, setRecipeFilterTime] = React.useState('Tutte');
+            const [recipeSearch, setRecipeSearch] = React.useState('');
+            const [recipeShowFilters, setRecipeShowFilters] = React.useState(false);
 
             React.useEffect(() => {
                 const unsubscribe = onAuthStateChanged(auth, async (u) => {
-                    if (u) { setUser(u); await fixDatabaseUnits(); setLoading(false); } 
+                    if (u) { setUser(u); setLoading(false); } 
                     else { signInAnonymously(auth); }
                 });
                 return () => unsubscribe();
             }, []);
-
-            React.useEffect(() => {
-                const unsub = onSnapshot(collection(db, "recipes"), (snap) => { setAllRecipes(snap.docs.map(d => ({id: d.id, ...d.data()}))); });
-                return () => unsub();
-            }, []);
-
+            React.useEffect(() => { const unsub = onSnapshot(collection(db, "recipes"), (snap) => { setAllRecipes(snap.docs.map(d => ({id: d.id, ...d.data()}))); }); return () => unsub(); }, []);
             React.useEffect(() => { loadIcons(); }, [activeTab, loading]);
 
             const handleEditRecipe = (recipe) => { setRecipeToEdit(recipe); setActiveTab('add'); };
@@ -1284,29 +934,24 @@
             return (
                 <div className="h-screen w-full flex flex-col bg-surface-ground text-slate-800 overflow-hidden font-sans">
                     <div className="glass fixed top-0 w-full z-20 px-6 py-4 flex justify-between items-center shadow-sm h-16">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-brand-100 p-2 rounded-xl text-brand-600"><i data-lucide="leaf" className="w-5 h-5"></i></div>
-                            <h1 className="font-display font-bold text-xl text-slate-900 tracking-tight">Pappe Mumi</h1>
-                        </div>
+                        <div className="flex items-center gap-2"><div className="bg-brand-100 p-2 rounded-xl text-brand-600"><i data-lucide="leaf" className="w-5 h-5"></i></div><h1 className="font-display font-bold text-xl text-slate-900 tracking-tight">Pappe Mumi</h1></div>
                         <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></div><span className="text-xs font-medium text-slate-400">Sync</span></div>
                     </div>
-
                     <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden pt-20 pb-32 px-4 scroll-smooth">
                         <div className="max-w-md mx-auto min-h-full">
-                            {activeTab === 'planner' && <Planner 
+                            {activeTab === 'planner' && <Planner onEditRequest={handleEditRecipe} currentDate={plannerDate} setCurrentDate={setPlannerDate} selectedDayIndex={plannerDay} setSelectedDayIndex={setPlannerDay} />}
+                            {activeTab === 'recipes' && <RecipeBook 
                                 onEditRequest={handleEditRecipe} 
-                                currentDate={plannerDate}
-                                setCurrentDate={setPlannerDate}
-                                selectedDayIndex={plannerDay}
-                                setSelectedDayIndex={setPlannerDay}
+                                filter={recipeFilter} setFilter={setRecipeFilter}
+                                filterTime={recipeFilterTime} setFilterTime={setRecipeFilterTime}
+                                q={recipeSearch} setQ={setRecipeSearch}
+                                showFilters={recipeShowFilters} setShowFilters={setRecipeShowFilters}
                             />}
-                            {activeTab === 'recipes' && <RecipeBook onEditRequest={handleEditRecipe} />}
                             {activeTab === 'add' && <AddRecipe onSave={handleSaveComplete} editData={recipeToEdit} />}
                             {activeTab === 'nutrition' && <Nutritionist />}
                             {activeTab === 'shopping' && <ShoppingList selectedDays={shoppingSelectedDays} setSelectedDays={setShoppingSelectedDays} recipes={allRecipes} />}
                         </div>
                     </div>
-
                     <nav className="glass-nav fixed bottom-0 w-full z-30 pb-safe">
                         <div className="flex justify-around items-center px-2 pt-3 pb-6 max-w-md mx-auto">
                             <NavBtn icon="calendar" label="Planner" active={activeTab === 'planner'} onClick={() => setActiveTab('planner')} />
