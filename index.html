@@ -85,6 +85,9 @@
         
         /* Smooth scrolling specifically for iOS */
         * { -webkit-overflow-scrolling: touch; }
+        
+        /* Safe area for notches */
+        .pt-safe-top { padding-top: env(safe-area-inset-top); }
     </style>
 </head>
 <body>
@@ -95,7 +98,7 @@
         import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, query, deleteDoc, where, writeBatch, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Global Error Handler
+        // Global Error Handler to catch React errors
         window.onerror = function(message, source, lineno, colno, error) {
             console.error("Global Error:", message, error);
         };
@@ -113,6 +116,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
+        // Helper per caricare le icone Lucide
         const loadIcons = () => setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 50);
 
         // --- UTILS ---
@@ -207,7 +212,7 @@
                                     <button 
                                         key={r.id} 
                                         onClick={(e) => {
-                                            e.stopPropagation(); // IMPORTANTE: ferma la propagazione
+                                            e.stopPropagation(); 
                                             onSelect(r);
                                         }}
                                         className="w-full p-3 bg-white rounded-2xl flex items-center gap-4 hover:shadow-md transition-all duration-300 text-left shadow-soft active:scale-[0.98] group animate-fade-in"
@@ -343,15 +348,25 @@
             };
 
             const displayEmoji = recipe.emoji || getCategoryEmoji(recipe.category);
+            
+            const getHeaderColor = (c) => {
+                if(c==='Colazione') return 'bg-yellow-50';
+                if(c==='Pranzo') return 'bg-orange-50';
+                if(c==='Cena') return 'bg-indigo-50';
+                if(c==='Spuntino') return 'bg-pink-50';
+                if(c==='Contorno') return 'bg-green-50';
+                return 'bg-brand-50';
+            };
+            const headerBg = getHeaderColor(recipe.category);
 
             return (
                 <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex justify-center pointer-events-none">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity duration-300" onClick={onClose} onTouchMove={(e) => e.preventDefault()} aria-label="Chiudi dettaglio"></div>
                     <div className="w-full max-w-md h-[100dvh] bg-white flex flex-col relative pointer-events-auto animate-slide-up overflow-hidden shadow-2xl">
-                        <div ref={headerRef} className="absolute top-0 left-0 w-full bg-brand-50 flex items-center justify-center overflow-hidden z-20 origin-top shadow-sm transition-none" style={{ height: '256px' }}>
+                        <div ref={headerRef} className={`absolute top-0 left-0 w-full ${headerBg} flex items-center justify-center overflow-hidden z-20 origin-top shadow-sm transition-none`} style={{ height: '256px' }}>
                             <div ref={emojiRef} className="transition-none leading-none origin-center" style={{ fontSize: '8rem', transform: 'scale(1)' }}>{displayEmoji}</div>
-                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-14 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
-                            <div className="absolute top-14 right-6 flex gap-2 z-30">
+                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-16 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
+                            <div className="absolute top-16 right-6 flex gap-2 z-30">
                                 <button onClick={onEdit} aria-label="Modifica ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white text-brand-700 transition-colors active:scale-95"><i data-lucide="pencil" className="w-6 h-6"></i></button>
                                 <button onClick={onDelete} aria-label="Elimina ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-red-50 text-red-500 transition-colors active:scale-95"><i data-lucide="trash-2" className="w-6 h-6"></i></button>
                             </div>
@@ -762,7 +777,7 @@
                     {itemMenuConfig && (
                         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setItemMenuConfig(null)} aria-label="Chiudi menu"></div>
-                            <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-24">
+                            <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-48">
                                 <div className="flex items-center gap-3 mb-6"><span className="text-3xl">{itemMenuConfig.recipe.emoji || getCategoryEmoji(itemMenuConfig.recipe.category)}</span><div className="flex-1"><h3 className="font-display font-bold text-xl text-slate-800 leading-tight">{itemMenuConfig.recipe.title}</h3><p className="text-xs text-slate-400 uppercase tracking-wide font-bold mt-1">{itemMenuConfig.type === 'side' ? 'Contorno' : itemMenuConfig.slot}</p></div><button onClick={() => setItemMenuConfig(null)} className="p-2 bg-slate-100 rounded-full active:scale-90 transition-transform"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button></div>
                                 <div className="space-y-3">
                                     <button onClick={() => { randomizeSpecificItem(itemMenuConfig.slot, itemMenuConfig.index, itemMenuConfig.type); setItemMenuConfig(null); }} className="w-full p-4 bg-brand-50 hover:bg-brand-100 rounded-2xl flex items-center gap-4 text-brand-700 font-bold transition-colors active:scale-[0.98]"><div className="bg-white p-2 rounded-xl shadow-sm"><i data-lucide="rotate-cw" className="w-6 h-6"></i></div>Cambia Casualmente</button>
@@ -1070,11 +1085,11 @@
 
             return (
                 <div className="h-screen w-full flex flex-col bg-surface-ground text-slate-800 overflow-hidden font-sans">
-                    <div className="glass fixed top-0 w-full z-20 px-6 py-4 flex justify-between items-center shadow-sm h-16">
+                    <div className="glass fixed top-0 w-full z-20 px-6 py-4 flex justify-between items-center shadow-sm h-16 pt-safe-top">
                         <div className="flex items-center gap-2"><div className="bg-brand-100 p-2 rounded-xl text-brand-600 active:scale-95 transition-transform"><i data-lucide="leaf" className="w-5 h-5"></i></div><h1 className="font-display font-bold text-xl text-slate-900 tracking-tight">Pappe Mumi</h1></div>
                         <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></div><span className="text-xs font-medium text-slate-400">Sync</span></div>
                     </div>
-                    <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden pt-20 pb-32 px-4 scroll-smooth">
+                    <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden pt-24 pb-32 px-4 scroll-smooth">
                         <div className="max-w-md mx-auto min-h-full" key={activeTab}>
                             {activeTab === 'planner' && <Planner onEditRequest={handleEditRecipe} currentDate={plannerDate} setCurrentDate={setPlannerDate} selectedDayIndex={plannerDay} setSelectedDayIndex={setPlannerDay} />}
                             {activeTab === 'recipes' && <RecipeBook 
