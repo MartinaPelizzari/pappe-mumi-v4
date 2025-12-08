@@ -350,8 +350,8 @@
                     <div className="w-full max-w-md h-[100dvh] bg-white flex flex-col relative pointer-events-auto animate-slide-up overflow-hidden shadow-2xl">
                         <div ref={headerRef} className="absolute top-0 left-0 w-full bg-brand-50 flex items-center justify-center overflow-hidden z-20 origin-top shadow-sm transition-none" style={{ height: '256px' }}>
                             <div ref={emojiRef} className="transition-none leading-none origin-center" style={{ fontSize: '8rem', transform: 'scale(1)' }}>{displayEmoji}</div>
-                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-10 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
-                            <div className="absolute top-10 right-6 flex gap-2 z-30">
+                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-14 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
+                            <div className="absolute top-14 right-6 flex gap-2 z-30">
                                 <button onClick={onEdit} aria-label="Modifica ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white text-brand-700 transition-colors active:scale-95"><i data-lucide="pencil" className="w-6 h-6"></i></button>
                                 <button onClick={onDelete} aria-label="Elimina ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-red-50 text-red-500 transition-colors active:scale-95"><i data-lucide="trash-2" className="w-6 h-6"></i></button>
                             </div>
@@ -788,7 +788,7 @@
         };
 
         // --- 5. RecipeBook (UPDATED STATE LIFTING) ---
-        const RecipeBook = ({ onEditRequest, filter, setFilter, filterTime, setFilterTime, q, setQ, showFilters, setShowFilters }) => {
+        const RecipeBook = ({ onEditRequest, onDeleteRequest, filter, setFilter, filterTime, setFilterTime, q, setQ, showFilters, setShowFilters }) => {
             const [recipes, setRecipes] = React.useState([]);
             const [sel, setSel] = React.useState(null);
             // Removed local states
@@ -814,20 +814,14 @@
                             <button onClick={(e) => { e.stopPropagation(); onEditRequest(r); }} aria-label="Modifica" className="p-3 text-brand-600 hover:text-brand-800 hover:bg-brand-50 rounded-xl transition-colors active:scale-90"><i data-lucide="pencil" className="w-5 h-5"></i></button>
                             <button onClick={(e) => {
                                 e.stopPropagation(); 
-                                // Direct deletion logic not accessible here due to context, handled in detail view or custom prop. 
-                                // Since direct delete is risky without confirm, we keep detail view as safe path or implement modal here too.
-                                // For simplicity and robustness given previous errors, I'll rely on detail view delete or implement modal in App scope if I passed it down.
-                                // To fix the "X" issue which is priority, I focused on App scope.
-                                // Let's trigger detail view for safety or pass down confirm handler.
-                                setSel(r); // Open detail to delete safely
+                                onDeleteRequest(r);
                             }} aria-label="Elimina" className="p-3 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors active:scale-90"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                         </div>
                     ))}</div>
                     {sel && (<RecipeDetailView key={sel.id} recipe={sel} onClose={() => setSel(null)} onEdit={() => { setSel(null); onEditRequest(sel); }} onDelete={() => { 
-                        // This prop is passed from App, but here RecipeBook doesn't have access to setConfirmModal.
-                        // I need to bubble up the delete request.
-                        // However, to keep it simple and working:
-                        deleteDoc(doc(db, 'recipes', sel.id)); setSel(null); 
+                        // Use the passed down onDeleteRequest so it opens the confirmation modal
+                        onDeleteRequest(sel); 
+                        setSel(null); 
                     }} />)}
                 </div>
             );
@@ -1085,6 +1079,16 @@
                             {activeTab === 'planner' && <Planner onEditRequest={handleEditRecipe} currentDate={plannerDate} setCurrentDate={setPlannerDate} selectedDayIndex={plannerDay} setSelectedDayIndex={setPlannerDay} />}
                             {activeTab === 'recipes' && <RecipeBook 
                                 onEditRequest={handleEditRecipe} 
+                                onDeleteRequest={(r) => {
+                                    setConfirmModal({
+                                        title: "Eliminare la ricetta?",
+                                        msg: "Questa azione non può essere annullata.",
+                                        action: async () => {
+                                            await deleteDoc(doc(db, 'recipes', r.id));
+                                            setConfirmModal(null);
+                                        }
+                                    });
+                                }}
                                 filter={recipeFilter} setFilter={setRecipeFilter}
                                 filterTime={recipeFilterTime} setFilterTime={setRecipeFilterTime}
                                 q={recipeSearch} setQ={setRecipeSearch}
