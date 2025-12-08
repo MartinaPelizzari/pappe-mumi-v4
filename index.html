@@ -350,8 +350,8 @@
                     <div className="w-full max-w-md h-[100dvh] bg-white flex flex-col relative pointer-events-auto animate-slide-up overflow-hidden shadow-2xl">
                         <div ref={headerRef} className="absolute top-0 left-0 w-full bg-brand-50 flex items-center justify-center overflow-hidden z-20 origin-top shadow-sm transition-none" style={{ height: '256px' }}>
                             <div ref={emojiRef} className="transition-none leading-none origin-center" style={{ fontSize: '8rem', transform: 'scale(1)' }}>{displayEmoji}</div>
-                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-6 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
-                            <div className="absolute top-6 right-6 flex gap-2 z-30">
+                            <button onClick={onClose} aria-label="Chiudi" className="absolute top-10 left-6 p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white transition-colors z-30 active:scale-95"><i data-lucide="chevron-left" className="w-6 h-6 text-slate-800"></i></button>
+                            <div className="absolute top-10 right-6 flex gap-2 z-30">
                                 <button onClick={onEdit} aria-label="Modifica ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-white text-brand-700 transition-colors active:scale-95"><i data-lucide="pencil" className="w-6 h-6"></i></button>
                                 <button onClick={onDelete} aria-label="Elimina ricetta" className="p-3 bg-white/50 backdrop-blur-md rounded-full hover:bg-red-50 text-red-500 transition-colors active:scale-95"><i data-lucide="trash-2" className="w-6 h-6"></i></button>
                             </div>
@@ -762,7 +762,7 @@
                     {itemMenuConfig && (
                         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setItemMenuConfig(null)} aria-label="Chiudi menu"></div>
-                            <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-10">
+                            <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 z-50 animate-slide-up shadow-2xl pb-safe pb-24">
                                 <div className="flex items-center gap-3 mb-6"><span className="text-3xl">{itemMenuConfig.recipe.emoji || getCategoryEmoji(itemMenuConfig.recipe.category)}</span><div className="flex-1"><h3 className="font-display font-bold text-xl text-slate-800 leading-tight">{itemMenuConfig.recipe.title}</h3><p className="text-xs text-slate-400 uppercase tracking-wide font-bold mt-1">{itemMenuConfig.type === 'side' ? 'Contorno' : itemMenuConfig.slot}</p></div><button onClick={() => setItemMenuConfig(null)} className="p-2 bg-slate-100 rounded-full active:scale-90 transition-transform"><i data-lucide="x" className="w-5 h-5 text-slate-600"></i></button></div>
                                 <div className="space-y-3">
                                     <button onClick={() => { randomizeSpecificItem(itemMenuConfig.slot, itemMenuConfig.index, itemMenuConfig.type); setItemMenuConfig(null); }} className="w-full p-4 bg-brand-50 hover:bg-brand-100 rounded-2xl flex items-center gap-4 text-brand-700 font-bold transition-colors active:scale-[0.98]"><div className="bg-white p-2 rounded-xl shadow-sm"><i data-lucide="rotate-cw" className="w-6 h-6"></i></div>Cambia Casualmente</button>
